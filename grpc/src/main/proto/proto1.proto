@@ -1,0 +1,19 @@
+syntax = "proto3";
+option java_multiple_files = true;
+option java_package = "io.grpc.test1";
+option java_outer_classname = "Proto1";
+option objc_class_prefix = "YINGMING";
+package cn.yingming.grpc1;
+
+// define the service
+service Greeter {
+  rpc TestSomeThing (TestRequest) returns (TestResponse) {
+  }
+}
+// define the message type
+message TestRequest {
+  string name = 1;
+}
+message TestResponse {
+  string message = 1;
+}
