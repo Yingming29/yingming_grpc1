@@ -1,13 +1,14 @@
 package cn.yingming.grpc1;
 
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
+import io.grpc.*;
 import io.grpc.bistream.CommunicateGrpc;
 import io.grpc.bistream.StreamRequest;
 import io.grpc.bistream.StreamResponse;
 import io.grpc.stub.StreamObserver;
 
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -15,11 +16,14 @@ public class BiStreamServer {
     // define the port and server
     private final int port = 50051;
     private Server server;
+    // <No, ip>
+    private ConcurrentHashMap<Integer, String> ips = new ConcurrentHashMap<>();
     // Start the server and listen.
     private void start() throws IOException {
-        server = ServerBuilder.forPort(port).addService(new CommunicateImpl()).build().start();
-
-        System.out.println(server.getListenSockets());
+        server = ServerBuilder.forPort(port)
+                .addService(new CommunicateImpl())
+                .intercept(new ClientAddInterceptor())
+                .build().start();
         System.out.println("---Server Starts.---");
         // The method will run before closing the server.
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -39,7 +43,7 @@ public class BiStreamServer {
         }
     }
     // Server blocks until it closes.
-    private void  blockUntilShutdown() throws InterruptedException {
+    private void blockUntilShutdown() throws InterruptedException {
         if (server!=null){
             server.awaitTermination();
         }
@@ -49,11 +53,11 @@ public class BiStreamServer {
         server.start();
         server.blockUntilShutdown();
     }
-
+    // Service
     private class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
         // HashMap for storing the clients, includes address and StreamObserver
         protected final ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients =
-                new ConcurrentHashMap<String, StreamObserver<StreamResponse>>();
+                new ConcurrentHashMap<>();
         protected final ReentrantLock lock = new ReentrantLock();
 
         public StreamObserver<StreamRequest> createConnection(StreamObserver<StreamResponse> responseObserver){
@@ -85,17 +89,19 @@ public class BiStreamServer {
         }
 
         protected void join(StreamRequest req, StreamObserver<StreamResponse> responseObserver){
+            // 1. get lock
             lock.lock();
+            // 2. critical section
             try{
                 clients.put(req.getSource(), responseObserver);
             }
-            // run after return, confirm the lock will be unlock.
+            // 3. run finally, confirm the lock will be unlock.
             finally {
                 // remember unlock
                 lock.unlock();
             }
         }
-
+        // Broadcast messages.
         protected void broadcast(StreamRequest req){
             lock.lock();
             try{
@@ -108,9 +114,9 @@ public class BiStreamServer {
                         .setMessage(msg)
                         .setTimestamp(timeStr)
                         .build();
-                // Iteration of StreamObserver for broadcast.
-                for (String add : clients.keySet()){
-                    clients.get(add).onNext(broMsg);
+                // Iteration of StreamObserver for broadcast message.
+                for (String name : clients.keySet()){
+                    clients.get(name).onNext(broMsg);
                 }
                 System.out.println("One broadcast for message.");
             }
@@ -120,4 +126,15 @@ public class BiStreamServer {
             }
         }
     }
+    // Get ip address of client when receive the join request.
+    private class ClientAddInterceptor implements ServerInterceptor {
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
+            String ip = call.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR).toString();
+            System.out.println("Joined Client IP address: " + ip);
+            ips.put(ips.size(), ip);
+            return next.startCall(call, headers);
+        }
+    }
+
 }

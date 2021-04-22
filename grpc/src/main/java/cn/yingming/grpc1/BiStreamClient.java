@@ -1,5 +1,6 @@
 package cn.yingming.grpc1;
 
+import io.grpc.Grpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.bistream.CommunicateGrpc;
@@ -18,7 +19,7 @@ public class BiStreamClient {
     // not used because they just have Bi-directional Mode. Just need asynStub
     private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
     private final CommunicateGrpc.CommunicateStub asynStub;
-    private static final String host = "localhost";
+    private static final String host = "127.0.0.1";
     private static final int port = 50051;
 
     public BiStreamClient(String host, int port) {

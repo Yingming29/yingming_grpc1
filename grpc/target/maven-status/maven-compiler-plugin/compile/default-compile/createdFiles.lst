@@ -26,6 +26,7 @@ cn/yingming/grpc1/BiStreamServer$1.class
 io/grpc/test1/GreeterGrpc$GreeterStub.class
 cn/yingming/grpc1/BiStreamServer$CommunicateImpl$1.class
 io/grpc/test1/Proto1.class
+cn/yingming/grpc1/BiStreamServer$ClientAddInterceptor.class
 io/grpc/bistream/CommunicateGrpc$CommunicateMethodDescriptorSupplier.class
 io/grpc/test1/TestRequestOrBuilder.class
 io/grpc/test1/GreeterGrpc$GreeterFutureStub.class
