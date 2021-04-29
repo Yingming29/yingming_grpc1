@@ -34,7 +34,7 @@ public class BiStreamServer {
         });
     }
 
-    // Stop server.
+    // Stop server
     private void stop() {
         if (server != null) {
             server.shutdown();
