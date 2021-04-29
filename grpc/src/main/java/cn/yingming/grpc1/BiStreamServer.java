@@ -14,7 +14,7 @@ public class BiStreamServer {
     // define the port and server
     private final int port = 50051;
     private Server server;
-    // <no, ip>
+    // <no, ip>.
     private ConcurrentHashMap<Integer, String> ips = new ConcurrentHashMap<>();
     // Start the server and listen.
     private void start() throws IOException {
