@@ -14,12 +14,13 @@ service Communicate {
 message StreamRequest {
   // the default value of string is empty, and that of boolean is false.
   string source = 1;
-  bool join = 2;
-  string message = 3;
-  string timestamp = 4;
+  string name = 2;
+  bool join = 3;
+  string message = 4;
+  string timestamp = 5;
 }
 message StreamResponse {
-  string source = 1;
+  string name = 1;
   string message = 2;
   string timestamp = 3;
 }

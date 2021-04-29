@@ -6,9 +6,7 @@ import io.grpc.bistream.StreamRequest;
 import io.grpc.bistream.StreamResponse;
 import io.grpc.stub.StreamObserver;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -16,7 +14,7 @@ public class BiStreamServer {
     // define the port and server
     private final int port = 50051;
     private Server server;
-    // <No, ip>
+    // <no, ip>
     private ConcurrentHashMap<Integer, String> ips = new ConcurrentHashMap<>();
     // Start the server and listen.
     private void start() throws IOException {
@@ -55,7 +53,7 @@ public class BiStreamServer {
     }
     // Service
     private class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
-        // HashMap for storing the clients, includes address and StreamObserver
+        // HashMap for storing the clients, includes uuid and StreamObserver
         protected final ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients =
                 new ConcurrentHashMap<>();
         protected final ReentrantLock lock = new ReentrantLock();
@@ -65,12 +63,13 @@ public class BiStreamServer {
                 @Override
                 public void onNext(StreamRequest streamRequest) {
                     if (streamRequest.getJoin()){ // true
-                        System.out.println(streamRequest.getSource() + " joins the chat.");
+                        System.out.println(streamRequest.getName() + "(" +
+                                streamRequest.getSource() + ") joins the chat.");
                         // responseObserver
                         join(streamRequest, responseObserver);
                     }
                     else{
-                        System.out.println(streamRequest.getSource() + " sends message: " + streamRequest.getMessage()
+                        System.out.println(streamRequest.getName() + " sends message: " + streamRequest.getMessage()
                                 + " at " + streamRequest.getTimestamp());
                         broadcast(streamRequest);
                     }
@@ -106,19 +105,20 @@ public class BiStreamServer {
             lock.lock();
             try{
                 // set the message which is broadcast to all clients.
-                String address = req.getSource();
+                String name = req.getName();
                 String msg = req.getMessage();
                 String timeStr = req.getTimestamp();
                 StreamResponse broMsg = StreamResponse.newBuilder()
-                        .setSource(address)
+                        .setName(name)
                         .setMessage(msg)
                         .setTimestamp(timeStr)
                         .build();
                 // Iteration of StreamObserver for broadcast message.
-                for (String name : clients.keySet()){
-                    clients.get(name).onNext(broMsg);
+                for (String u : clients.keySet()){
+                    clients.get(u).onNext(broMsg);
                 }
                 System.out.println("One broadcast for message.");
+                System.out.println(broMsg.toString());
             }
             // run after return, confirm the lock will be unlock.
             finally {

@@ -8,16 +8,16 @@ public interface StreamResponseOrBuilder extends
     com.google.protobuf.MessageOrBuilder {
 
   /**
-   * <code>string source = 1;</code>
-   * @return The source.
+   * <code>string name = 1;</code>
+   * @return The name.
    */
-  java.lang.String getSource();
+  java.lang.String getName();
   /**
-   * <code>string source = 1;</code>
-   * @return The bytes for source.
+   * <code>string name = 1;</code>
+   * @return The bytes for name.
    */
   com.google.protobuf.ByteString
-      getSourceBytes();
+      getNameBytes();
 
   /**
    * <code>string message = 2;</code>

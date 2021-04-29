@@ -33,15 +33,16 @@ public final class Bistream {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\016bistream.proto\022\021cn.yingming.grpc1\"Q\n\rS" +
-      "treamRequest\022\016\n\006source\030\001 \001(\t\022\014\n\004join\030\002 \001" +
-      "(\010\022\017\n\007message\030\003 \001(\t\022\021\n\ttimestamp\030\004 \001(\t\"D" +
-      "\n\016StreamResponse\022\016\n\006source\030\001 \001(\t\022\017\n\007mess" +
-      "age\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\t2l\n\013Communic" +
-      "ate\022]\n\020createConnection\022 .cn.yingming.gr" +
-      "pc1.StreamRequest\032!.cn.yingming.grpc1.St" +
-      "reamResponse\"\000(\0010\001B)\n\020io.grpc.bistreamB\010" +
-      "BistreamP\001\242\002\010YINGMINGb\006proto3"
+      "\n\016bistream.proto\022\021cn.yingming.grpc1\"_\n\rS" +
+      "treamRequest\022\016\n\006source\030\001 \001(\t\022\014\n\004name\030\002 \001" +
+      "(\t\022\014\n\004join\030\003 \001(\010\022\017\n\007message\030\004 \001(\t\022\021\n\ttim" +
+      "estamp\030\005 \001(\t\"B\n\016StreamResponse\022\014\n\004name\030\001" +
+      " \001(\t\022\017\n\007message\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\t" +
+      "2l\n\013Communicate\022]\n\020createConnection\022 .cn" +
+      ".yingming.grpc1.StreamRequest\032!.cn.yingm" +
+      "ing.grpc1.StreamResponse\"\000(\0010\001B)\n\020io.grp" +
+      "c.bistreamB\010BistreamP\001\242\002\010YINGMINGb\006proto" +
+      "3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -52,13 +53,13 @@ public final class Bistream {
     internal_static_cn_yingming_grpc1_StreamRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_cn_yingming_grpc1_StreamRequest_descriptor,
-        new java.lang.String[] { "Source", "Join", "Message", "Timestamp", });
+        new java.lang.String[] { "Source", "Name", "Join", "Message", "Timestamp", });
     internal_static_cn_yingming_grpc1_StreamResponse_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_cn_yingming_grpc1_StreamResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_cn_yingming_grpc1_StreamResponse_descriptor,
-        new java.lang.String[] { "Source", "Message", "Timestamp", });
+        new java.lang.String[] { "Name", "Message", "Timestamp", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

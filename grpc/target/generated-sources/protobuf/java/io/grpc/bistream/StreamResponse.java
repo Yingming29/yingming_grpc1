@@ -16,7 +16,7 @@ private static final long serialVersionUID = 0L;
     super(builder);
   }
   private StreamResponse() {
-    source_ = "";
+    name_ = "";
     message_ = "";
     timestamp_ = "";
   }
@@ -54,7 +54,7 @@ private static final long serialVersionUID = 0L;
           case 10: {
             java.lang.String s = input.readStringRequireUtf8();
 
-            source_ = s;
+            name_ = s;
             break;
           }
           case 18: {
@@ -101,38 +101,38 @@ private static final long serialVersionUID = 0L;
             io.grpc.bistream.StreamResponse.class, io.grpc.bistream.StreamResponse.Builder.class);
   }
 
-  public static final int SOURCE_FIELD_NUMBER = 1;
-  private volatile java.lang.Object source_;
+  public static final int NAME_FIELD_NUMBER = 1;
+  private volatile java.lang.Object name_;
   /**
-   * <code>string source = 1;</code>
-   * @return The source.
+   * <code>string name = 1;</code>
+   * @return The name.
    */
   @java.lang.Override
-  public java.lang.String getSource() {
-    java.lang.Object ref = source_;
+  public java.lang.String getName() {
+    java.lang.Object ref = name_;
     if (ref instanceof java.lang.String) {
       return (java.lang.String) ref;
     } else {
       com.google.protobuf.ByteString bs = 
           (com.google.protobuf.ByteString) ref;
       java.lang.String s = bs.toStringUtf8();
-      source_ = s;
+      name_ = s;
       return s;
     }
   }
   /**
-   * <code>string source = 1;</code>
-   * @return The bytes for source.
+   * <code>string name = 1;</code>
+   * @return The bytes for name.
    */
   @java.lang.Override
   public com.google.protobuf.ByteString
-      getSourceBytes() {
-    java.lang.Object ref = source_;
+      getNameBytes() {
+    java.lang.Object ref = name_;
     if (ref instanceof java.lang.String) {
       com.google.protobuf.ByteString b = 
           com.google.protobuf.ByteString.copyFromUtf8(
               (java.lang.String) ref);
-      source_ = b;
+      name_ = b;
       return b;
     } else {
       return (com.google.protobuf.ByteString) ref;
@@ -229,8 +229,8 @@ private static final long serialVersionUID = 0L;
   @java.lang.Override
   public void writeTo(com.google.protobuf.CodedOutputStream output)
                       throws java.io.IOException {
-    if (!getSourceBytes().isEmpty()) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 1, source_);
+    if (!getNameBytes().isEmpty()) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
     }
     if (!getMessageBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 2, message_);
@@ -247,8 +247,8 @@ private static final long serialVersionUID = 0L;
     if (size != -1) return size;
 
     size = 0;
-    if (!getSourceBytes().isEmpty()) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, source_);
+    if (!getNameBytes().isEmpty()) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
     }
     if (!getMessageBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, message_);
@@ -271,8 +271,8 @@ private static final long serialVersionUID = 0L;
     }
     io.grpc.bistream.StreamResponse other = (io.grpc.bistream.StreamResponse) obj;
 
-    if (!getSource()
-        .equals(other.getSource())) return false;
+    if (!getName()
+        .equals(other.getName())) return false;
     if (!getMessage()
         .equals(other.getMessage())) return false;
     if (!getTimestamp()
@@ -288,8 +288,8 @@ private static final long serialVersionUID = 0L;
     }
     int hash = 41;
     hash = (19 * hash) + getDescriptor().hashCode();
-    hash = (37 * hash) + SOURCE_FIELD_NUMBER;
-    hash = (53 * hash) + getSource().hashCode();
+    hash = (37 * hash) + NAME_FIELD_NUMBER;
+    hash = (53 * hash) + getName().hashCode();
     hash = (37 * hash) + MESSAGE_FIELD_NUMBER;
     hash = (53 * hash) + getMessage().hashCode();
     hash = (37 * hash) + TIMESTAMP_FIELD_NUMBER;
@@ -427,7 +427,7 @@ private static final long serialVersionUID = 0L;
     @java.lang.Override
     public Builder clear() {
       super.clear();
-      source_ = "";
+      name_ = "";
 
       message_ = "";
 
@@ -459,7 +459,7 @@ private static final long serialVersionUID = 0L;
     @java.lang.Override
     public io.grpc.bistream.StreamResponse buildPartial() {
       io.grpc.bistream.StreamResponse result = new io.grpc.bistream.StreamResponse(this);
-      result.source_ = source_;
+      result.name_ = name_;
       result.message_ = message_;
       result.timestamp_ = timestamp_;
       onBuilt();
@@ -510,8 +510,8 @@ private static final long serialVersionUID = 0L;
 
     public Builder mergeFrom(io.grpc.bistream.StreamResponse other) {
       if (other == io.grpc.bistream.StreamResponse.getDefaultInstance()) return this;
-      if (!other.getSource().isEmpty()) {
-        source_ = other.source_;
+      if (!other.getName().isEmpty()) {
+        name_ = other.name_;
         onChanged();
       }
       if (!other.getMessage().isEmpty()) {
@@ -551,78 +551,78 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
-    private java.lang.Object source_ = "";
+    private java.lang.Object name_ = "";
     /**
-     * <code>string source = 1;</code>
-     * @return The source.
+     * <code>string name = 1;</code>
+     * @return The name.
      */
-    public java.lang.String getSource() {
-      java.lang.Object ref = source_;
+    public java.lang.String getName() {
+      java.lang.Object ref = name_;
       if (!(ref instanceof java.lang.String)) {
         com.google.protobuf.ByteString bs =
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        source_ = s;
+        name_ = s;
         return s;
       } else {
         return (java.lang.String) ref;
       }
     }
     /**
-     * <code>string source = 1;</code>
-     * @return The bytes for source.
+     * <code>string name = 1;</code>
+     * @return The bytes for name.
      */
     public com.google.protobuf.ByteString
-        getSourceBytes() {
-      java.lang.Object ref = source_;
+        getNameBytes() {
+      java.lang.Object ref = name_;
       if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        source_ = b;
+        name_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
     /**
-     * <code>string source = 1;</code>
-     * @param value The source to set.
+     * <code>string name = 1;</code>
+     * @param value The name to set.
      * @return This builder for chaining.
      */
-    public Builder setSource(
+    public Builder setName(
         java.lang.String value) {
       if (value == null) {
     throw new NullPointerException();
   }
   
-      source_ = value;
+      name_ = value;
       onChanged();
       return this;
     }
     /**
-     * <code>string source = 1;</code>
+     * <code>string name = 1;</code>
      * @return This builder for chaining.
      */
-    public Builder clearSource() {
+    public Builder clearName() {
       
-      source_ = getDefaultInstance().getSource();
+      name_ = getDefaultInstance().getName();
       onChanged();
       return this;
     }
     /**
-     * <code>string source = 1;</code>
-     * @param value The bytes for source to set.
+     * <code>string name = 1;</code>
+     * @param value The bytes for name to set.
      * @return This builder for chaining.
      */
-    public Builder setSourceBytes(
+    public Builder setNameBytes(
         com.google.protobuf.ByteString value) {
       if (value == null) {
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
       
-      source_ = value;
+      name_ = value;
       onChanged();
       return this;
     }
