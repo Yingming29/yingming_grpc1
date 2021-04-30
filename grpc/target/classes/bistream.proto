@@ -5,7 +5,7 @@ option java_outer_classname = "Bistream";
 option objc_class_prefix = "YINGMING";
 package cn.yingming.grpc1;
 
-// define the service
+// define the service..
 service Communicate {
   rpc createConnection(stream StreamRequest) returns (stream StreamResponse) {
   }
