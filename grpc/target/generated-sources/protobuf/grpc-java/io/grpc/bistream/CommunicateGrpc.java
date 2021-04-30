@@ -4,7 +4,7 @@ import static io.grpc.MethodDescriptor.generateFullMethodName;
 
 /**
  * <pre>
- * define the service
+ * define the service..
  * </pre>
  */
 @javax.annotation.Generated(
@@ -94,7 +94,7 @@ public final class CommunicateGrpc {
 
   /**
    * <pre>
-   * define the service
+   * define the service..
    * </pre>
    */
   public static abstract class CommunicateImplBase implements io.grpc.BindableService {
@@ -121,7 +121,7 @@ public final class CommunicateGrpc {
 
   /**
    * <pre>
-   * define the service
+   * define the service..
    * </pre>
    */
   public static final class CommunicateStub extends io.grpc.stub.AbstractAsyncStub<CommunicateStub> {
@@ -147,7 +147,7 @@ public final class CommunicateGrpc {
 
   /**
    * <pre>
-   * define the service
+   * define the service..
    * </pre>
    */
   public static final class CommunicateBlockingStub extends io.grpc.stub.AbstractBlockingStub<CommunicateBlockingStub> {
@@ -165,7 +165,7 @@ public final class CommunicateGrpc {
 
   /**
    * <pre>
-   * define the service
+   * define the service..
    * </pre>
    */
   public static final class CommunicateFutureStub extends io.grpc.stub.AbstractFutureStub<CommunicateFutureStub> {

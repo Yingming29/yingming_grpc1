@@ -7,6 +7,8 @@ import io.grpc.bistream.StreamResponse;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -93,6 +95,14 @@ public class BiStreamServer {
             // 2. critical section
             try{
                 clients.put(req.getSource(), responseObserver);
+                Date d = new Date();
+                SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
+                StreamResponse joinResponse = StreamResponse.newBuilder()
+                        .setName("Server")
+                        .setMessage("You join successfully.")
+                        .setTimestamp(dft.format(d))
+                        .build();
+                responseObserver.onNext(joinResponse);
             }
             // 3. run finally, confirm the lock will be unlock.
             finally {
