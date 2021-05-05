@@ -9,7 +9,7 @@ public class test {
     public static void main(String[] args) throws IOException {
         String line = System.getProperty("\r");
         Utils.createTXTFile("Node1");
-        /*
+        /* /
         try {
             StringBuffer sb = new StringBuffer("");
             FileReader reader = new FileReader("server.txt");

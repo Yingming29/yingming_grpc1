@@ -8,7 +8,7 @@ public class Utils {
 
     }
     public static void createTXTFile(String nodeName) throws IOException {
-        // "txtFile/" +
+        // "txtFile/" +  //
         String fileName = nodeName + "-ClientMsg.txt";
         File sharedFileName = new File(fileName);
         if (!sharedFileName.exists()){

@@ -56,7 +56,7 @@ public class BiStreamClient {
             }
         });
 
-        // Join
+        // Join.
         StreamRequest joinReq = StreamRequest.newBuilder()
                 .setJoin(true)
                 .setSource(uuid)
