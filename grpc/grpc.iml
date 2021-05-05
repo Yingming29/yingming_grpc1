@@ -34,5 +34,14 @@
     <orderEntry type="library" scope="RUNTIME" name="Maven: org.codehaus.mojo:animal-sniffer-annotations:1.19" level="project" />
     <orderEntry type="library" name="Maven: io.grpc:grpc-stub:1.37.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.apache.tomcat:annotations-api:6.0.53" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$USER_HOME$/Desktop/JGroups_FIle/jgroups-5.0.0.Final.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>

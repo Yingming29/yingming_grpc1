@@ -8,22 +8,48 @@ import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class BiStreamServer {
-    // define the port and server
-    private final int port = 50051;
+import org.jgroups.JChannel;
+
+import org.jgroups.Receiver;
+import org.jgroups.View;
+
+public class BiStreamServer implements Receiver {
+    private int t;
+    // The port of server
+    private int port;
+    // The server of gRPC
     private Server server;
-    // <no, ip>.
-    private ConcurrentHashMap<Integer, String> ips = new ConcurrentHashMap<>();
-    // Start the server and listen.
-    private void start() throws IOException {
-        server = ServerBuilder.forPort(port)
+    // <no, ip>, it stores all ip address for clients, who are connecting to this server.
+    private ConcurrentHashMap<Integer, String> ips;
+    // 2. JGroups part:
+    JChannel channel;
+    String nodeName;
+    String jClusterName;
+    List msgList1;
+    // Server node contains gRPC server and J channel.
+    public BiStreamServer(int port, String nodeName, String jClusterName) throws Exception {
+        // three args
+        this.port = port;
+        this.nodeName = nodeName;
+        this.jClusterName = jClusterName;
+        // gRPC server
+        this.server = ServerBuilder.forPort(port)
                 .addService(new CommunicateImpl())
                 .intercept(new ClientAddInterceptor())
-                .build().start();
+                .build();
+        this.ips = new ConcurrentHashMap<>();
+        this.channel = new JChannel();
+        this.msgList1 = new ArrayList();
+    }
+    // Start the gRPC server.
+    private void start() throws IOException {
+        this.server.start();
         System.out.println("---Server Starts.---");
         // The method will run before closing the server.
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -35,8 +61,25 @@ public class BiStreamServer {
             }
         });
     }
+    // Start JChannel
+    private void startJchannel() throws Exception {
+        this.channel.setReceiver(this);
+        this.channel.connect(this.jClusterName);
+        eventLoop();
+        this.channel.close();
+    }
+    // loop for checking the shared file for message
+    private void eventLoop(){
 
-    // Stop server
+    }
+    public void viewAccepted(View new_view) {
+        System.out.println("** view: " + new_view);
+    }
+    public void receive(org.jgroups.Message msg) {
+        System.out.println(msg.getSrc() + ":" + msg.getObject());
+    }
+
+    // Stop gRPC server
     private void stop() {
         if (server != null) {
             server.shutdown();
@@ -48,11 +91,7 @@ public class BiStreamServer {
             server.awaitTermination();
         }
     }
-    public static void main(String[] args) throws IOException, InterruptedException {
-        final BiStreamServer server = new BiStreamServer();
-        server.start();
-        server.blockUntilShutdown();
-    }
+
     // Service.
     private class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
         // HashMap for storing the clients, includes uuid and StreamObserver
@@ -78,14 +117,14 @@ public class BiStreamServer {
                 }
 
                 @Override
-                public void onError(Throwable throwable) {
-                    System.out.println(throwable.getMessage());
+                public void onError(Throwable throwable) { System.out.println(throwable.getMessage());
                 }
 
                 @Override
                 public void onCompleted() {
                     responseObserver.onCompleted();
                 }
+
             };
         }
 
@@ -126,6 +165,7 @@ public class BiStreamServer {
                 // Iteration of StreamObserver for broadcast message.
                 for (String u : clients.keySet()){
                     clients.get(u).onNext(broMsg);
+                    //
                 }
                 System.out.println("One broadcast for message.");
                 System.out.println(broMsg.toString());
@@ -147,4 +187,15 @@ public class BiStreamServer {
         }
     }
 
+    private void print(){
+        while(true){
+            System.out.println("test");
+        }
+    }
+    public static void main(String[] args) throws Exception {
+        final BiStreamServer node = new BiStreamServer(Integer.parseInt(args[0]), args[1], args[2]);
+        node.start();
+        //node.print();
+        node.blockUntilShutdown();
+    }
 }

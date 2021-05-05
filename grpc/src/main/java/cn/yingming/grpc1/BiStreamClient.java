@@ -10,9 +10,11 @@ import io.grpc.stub.StreamObserver;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public class BiStreamClient {
     private final ManagedChannel channel;
@@ -20,7 +22,8 @@ public class BiStreamClient {
     private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
     private final CommunicateGrpc.CommunicateStub asynStub;
     private static final String host = "127.0.0.1";
-    private static final int port = 50051;
+    private static final int port = 50052;
+    private String client_add;
     private String uuid;
 
     public BiStreamClient(String host, int port) {
@@ -31,6 +34,7 @@ public class BiStreamClient {
         blockingStub = CommunicateGrpc.newBlockingStub(channel);
         asynStub = CommunicateGrpc.newStub(channel);
         uuid = UUID.randomUUID().toString();
+        // Get its ip address
     }
 
     public void start(String name){
@@ -51,6 +55,7 @@ public class BiStreamClient {
                 System.out.println("onCompleted");
             }
         });
+
         // Join
         StreamRequest joinReq = StreamRequest.newBuilder()
                 .setJoin(true)
@@ -86,12 +91,28 @@ public class BiStreamClient {
     }
 
     public String setName() throws IOException {
+
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Input Name.");
         System.out.println(">");
         System.out.flush();
         String line = in.readLine();
         return line;
+
+        // Print the local ip address.
+        /*
+        try{
+            InetAddress address = InetAddress.getLocalHost();
+            System.out.println(address.getHostAddress());
+            System.out.println(address.getAddress());
+            return address.getHostAddress();
+        } catch (Exception e){
+            System.out.println("Get client address error.");
+            return null;
+        }
+
+         */
+
     }
     public static void main(String[] args) throws IOException {
         BiStreamClient client = new BiStreamClient(host, port);
