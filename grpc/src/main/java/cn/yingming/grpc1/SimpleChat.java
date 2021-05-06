@@ -20,7 +20,7 @@ public class SimpleChat implements Receiver{
     }
     @Override
     public void receive(Message msg) {
-        String line = msg.getSrc() + ":" + msg.getObject();
+        String line = msg.getSrc() + ": " + msg.getObject();
         System.out.println(line);
     }
 

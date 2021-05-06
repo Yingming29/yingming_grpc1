@@ -68,7 +68,7 @@ public class SimpleChat2 implements Receiver{
                     break;
                 }
                 line = "[" + user_name + "]" + line;
-                // destination address is null, send msg to everyone in the cluster.
+                // destination address is null, send msg to everyone in the cluster
                 Message msg = new ObjectMessage(null, line);
                 channel.send(msg);
             } catch (Exception e) {

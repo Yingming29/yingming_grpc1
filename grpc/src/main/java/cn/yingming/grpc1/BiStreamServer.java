@@ -81,7 +81,7 @@ public class BiStreamServer implements Receiver {
         this.channel.close();
     }
 
-    // loop for checking the shared file for the message
+    // loop for checking the shared file for the message.
     private void eventLoop() {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         while (true) {
@@ -98,7 +98,7 @@ public class BiStreamServer implements Receiver {
                 Message msg = new ObjectMessage(null, line);
                 channel.send(msg);
             } catch (Exception e) {
-                // TODO: handle exception
+                // TODO: handle exception.
             }
         }
 

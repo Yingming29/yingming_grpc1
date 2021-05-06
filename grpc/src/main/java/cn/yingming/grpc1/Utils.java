@@ -94,7 +94,7 @@ public class Utils {
         }
         // convert msg to String line
         msgLine = parseMsgToLine(msg);
-        // add line to .txt file
+        // add line to .txt file.
         FileWriter fileWriter = new FileWriter(new File(filePath), true);
         BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
         try{

@@ -60,7 +60,7 @@ public class BiStreamServer2 {
     }
     // Service
     private class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
-        // HashMap for storing the clients, includes uuid and StreamObserver
+        // HashMap for storing the clients, includes uuid and StreamObserver.
         protected final ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients =
                 new ConcurrentHashMap<>();
         protected final ReentrantLock lock = new ReentrantLock();
