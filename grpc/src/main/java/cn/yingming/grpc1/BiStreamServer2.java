@@ -79,6 +79,7 @@ public class BiStreamServer2 {
                                 streamRequest.getSource() + ") joins the chat.");
                         // responseObserver
                         join(streamRequest, responseObserver);
+                        jchannel.channel.send(streamRequest.getName().toString());
                     }
                     else{
                         System.out.println(streamRequest.getName() + " sends message: " + streamRequest.getMessage()
