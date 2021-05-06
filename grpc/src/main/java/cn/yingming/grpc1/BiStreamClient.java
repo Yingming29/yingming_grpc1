@@ -22,7 +22,7 @@ public class BiStreamClient {
     private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
     private final CommunicateGrpc.CommunicateStub asynStub;
     private static final String host = "127.0.0.1";
-    private static final int port = 50052;
+    private static final int port = 50051;
     private String client_add;
     private String uuid;
 

@@ -3,6 +3,7 @@
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/grpc-java/io/grpc/test1/GreeterGrpc.java
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/java/io/grpc/bistream/StreamResponse.java
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/java/io/grpc/test1/TestResponseOrBuilder.java
+/home/yingming/IdeaProjects/yingming/grpc/src/main/java/cn/yingming/grpc1/test.java
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/java/io/grpc/bistream/StreamResponseOrBuilder.java
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/java/io/grpc/test1/Proto1.java
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/java/io/grpc/bistream/Bistream.java
@@ -14,3 +15,4 @@
 /home/yingming/IdeaProjects/yingming/grpc/src/main/java/cn/yingming/grpc1/BiStreamServer.java
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/java/io/grpc/test1/TestRequest.java
 /home/yingming/IdeaProjects/yingming/grpc/src/main/java/cn/yingming/grpc1/TestServer.java
+/home/yingming/IdeaProjects/yingming/grpc/src/main/java/cn/yingming/grpc1/Utils.java

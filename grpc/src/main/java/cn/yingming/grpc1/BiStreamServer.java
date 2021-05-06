@@ -6,7 +6,9 @@ import io.grpc.bistream.StreamRequest;
 import io.grpc.bistream.StreamResponse;
 import io.grpc.stub.StreamObserver;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,10 +16,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.jgroups.JChannel;
+import org.jgroups.*;
 
-import org.jgroups.Receiver;
-import org.jgroups.View;
 import cn.yingming.grpc1.Utils;
 
 public class BiStreamServer implements Receiver {
@@ -50,21 +50,15 @@ public class BiStreamServer implements Receiver {
     }
     // 1. Create files
     private void startFiles(String nodeName) throws Exception {
-        boolean result = Utils.createTXTFile(nodeName);
+        boolean result = Utils.createTxtFile(nodeName);
         if (result){
             System.out.println("Node creates file successfully.");
         } else{
             throw new Exception("Node creates file unsuccessfully.");
         }
     }
-    // 2. Start JChannel
-    private void startJchannel() throws Exception {
-        this.channel.setReceiver(this);
-        this.channel.connect(this.jClusterName);
-        eventLoop();
-        this.channel.close();
-    }
-    // 3. Start the gRPC server.
+
+    // 2. Start the gRPC server.
     private void startGrpc() throws IOException {
         this.server.start();
         System.out.println("---gRPC Server Starts.---");
@@ -79,8 +73,34 @@ public class BiStreamServer implements Receiver {
         });
     }
 
+    // 3. Start JChannel
+    private void startJchannel() throws Exception {
+        this.channel.setReceiver(this);
+        this.channel.connect(this.jClusterName);
+        eventLoop();
+        this.channel.close();
+    }
+
     // loop for checking the shared file for message
-    private void eventLoop(){
+    private void eventLoop() {
+        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        while (true) {
+            try {
+                System.out.println(">");
+                // Before readLine(), clear the in stream.
+                System.out.flush();
+                String line = in.readLine().toLowerCase();
+                if (line.startsWith("quit") || line.startsWith("exit")) {
+                    break;
+                }
+                line = "[" + "Node1" + "]" + line;
+                // destination address is null, send msg to everyone in the cluster.
+                Message msg = new ObjectMessage(null, line);
+                channel.send(msg);
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
 
     }
     public void viewAccepted(View new_view) {
@@ -209,7 +229,7 @@ public class BiStreamServer implements Receiver {
         node.startFiles(args[1]);
         //node.print();
         node.startGrpc();
-        //node.startJchannel();
+        node.startJchannel();
         node.blockUntilShutdown();
     }
 }
