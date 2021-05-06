@@ -1,4 +1,7 @@
+cn/yingming/grpc1/BiStreamServer2$ClientAddInterceptor.class
+cn/yingming/grpc1/BiStreamServer2$1.class
 cn/yingming/grpc1/BiStreamServer$CommunicateImpl.class
+cn/yingming/grpc1/BiStreamServer2$CommunicateImpl.class
 cn/yingming/grpc1/TestClient.class
 cn/yingming/grpc1/TestServer$1.class
 cn/yingming/grpc1/BiStreamServer$1.class
@@ -7,5 +10,7 @@ cn/yingming/grpc1/BiStreamServer$CommunicateImpl$1.class
 cn/yingming/grpc1/BiStreamServer$ClientAddInterceptor.class
 cn/yingming/grpc1/BiStreamServer.class
 cn/yingming/grpc1/TestServer$GreeterImpl.class
+cn/yingming/grpc1/BiStreamServer2.class
 cn/yingming/grpc1/TestServer.class
+cn/yingming/grpc1/BiStreamServer2$CommunicateImpl$1.class
 cn/yingming/grpc1/Utils.class

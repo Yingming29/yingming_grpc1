@@ -1,5 +1,6 @@
 package cn.yingming.grpc1;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import static cn.yingming.grpc1.MessageMiddle.parseMsgToLine;
 
 public class Utils {
     public static void parseMessage() {
@@ -71,14 +74,38 @@ public class Utils {
         if (msgList.size() == 0){
             System.out.println("Not receive message from Nodes.");
         } else{
-            // System.out.println(msgList);
+            System.out.println(msgList);
             System.out.println("Receive message from Nodes.");
         }
     }
 
-    public static void addMsgToTxt(String msg, String nodeName){
+    // Add the new message as a line into .txt file.
+    public static void addMsgToTxt(MessageMiddle msg, String nodeName, String type) throws Exception {
+        String filePath;
+        String msgLine;
+
+        // Get file path by type.
+        if (type == "Node"){
+            filePath = "grpc/txt/" + nodeName + "-NodesMsg.txt";
+        } else if (type == "Grpc"){
+            filePath = "grpc/txt/" + nodeName + "-ClientMsg.txt";
+        } else {
+            throw new Exception("Error type.");
+        }
+        // convert msg to String line
+        msgLine = parseMsgToLine(msg);
+        // add line to .txt file
+        FileWriter fileWriter = new FileWriter(new File(filePath), true);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        try{
+            bufferedWriter.write(msgLine + "\n");
+        } finally {
+            bufferedWriter.close();
+            fileWriter.close();
+        }
 
     }
+
     // Clear lines in .txt file.
     public static void clearTxt(String filePath) throws Exception {
         File file = new File(filePath);
