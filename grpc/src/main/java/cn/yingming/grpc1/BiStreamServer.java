@@ -18,6 +18,7 @@ import org.jgroups.JChannel;
 
 import org.jgroups.Receiver;
 import org.jgroups.View;
+import cn.yingming.grpc1.Utils;
 
 public class BiStreamServer implements Receiver {
     private int t;
@@ -31,7 +32,7 @@ public class BiStreamServer implements Receiver {
     JChannel channel;
     String nodeName;
     String jClusterName;
-    List msgList1;
+
     // Server node contains gRPC server and J channel.
     public BiStreamServer(int port, String nodeName, String jClusterName) throws Exception {
         // three args
@@ -45,12 +46,28 @@ public class BiStreamServer implements Receiver {
                 .build();
         this.ips = new ConcurrentHashMap<>();
         this.channel = new JChannel();
-        this.msgList1 = new ArrayList();
+
     }
-    // Start the gRPC server.
-    private void start() throws IOException {
+    // 1. Create files
+    private void startFiles(String nodeName) throws Exception {
+        boolean result = Utils.createTXTFile(nodeName);
+        if (result){
+            System.out.println("Node creates file successfully.");
+        } else{
+            throw new Exception("Node creates file unsuccessfully.");
+        }
+    }
+    // 2. Start JChannel
+    private void startJchannel() throws Exception {
+        this.channel.setReceiver(this);
+        this.channel.connect(this.jClusterName);
+        eventLoop();
+        this.channel.close();
+    }
+    // 3. Start the gRPC server.
+    private void startGrpc() throws IOException {
         this.server.start();
-        System.out.println("---Server Starts.---");
+        System.out.println("---gRPC Server Starts.---");
         // The method will run before closing the server.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -61,13 +78,7 @@ public class BiStreamServer implements Receiver {
             }
         });
     }
-    // Start JChannel
-    private void startJchannel() throws Exception {
-        this.channel.setReceiver(this);
-        this.channel.connect(this.jClusterName);
-        eventLoop();
-        this.channel.close();
-    }
+
     // loop for checking the shared file for message
     private void eventLoop(){
 
@@ -105,7 +116,7 @@ public class BiStreamServer implements Receiver {
                 public void onNext(StreamRequest streamRequest) {
                     if (streamRequest.getJoin()){ // true
                         System.out.println(streamRequest.getName() + "(" +
-                                streamRequest.getSource() + ") joins the chat.");
+                                streamRequest.getSource() + ") joins the node chat.");
                         // responseObserver
                         join(streamRequest, responseObserver);
                     }
@@ -193,9 +204,12 @@ public class BiStreamServer implements Receiver {
         }
     }
     public static void main(String[] args) throws Exception {
+        // args 0, 1, 2: int port, String nodeName, String jClusterName
         final BiStreamServer node = new BiStreamServer(Integer.parseInt(args[0]), args[1], args[2]);
-        node.start();
+        node.startFiles(args[1]);
         //node.print();
+        node.startGrpc();
+        //node.startJchannel();
         node.blockUntilShutdown();
     }
 }
