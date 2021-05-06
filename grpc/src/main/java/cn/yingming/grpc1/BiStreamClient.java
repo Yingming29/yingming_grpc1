@@ -100,7 +100,7 @@ public class BiStreamClient {
         return line;
 
         // Print the local ip address.
-        /*
+        /* 2
         try{
             InetAddress address = InetAddress.getLocalHost();
             System.out.println(address.getHostAddress());

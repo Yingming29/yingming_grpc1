@@ -62,7 +62,7 @@ public class Utils {
         }
     }
 
-    // Read .txt file storing msg from nodes
+    // Read .txt file storing msg from nodes.
     public static void readNodeTxt(List msgList, String nodeName){
         String filePath = "grpc/txt/" + nodeName + "-NodesMsg.txt";
         // List<String> msgList = new ArrayList<>();

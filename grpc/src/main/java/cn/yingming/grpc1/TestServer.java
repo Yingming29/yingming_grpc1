@@ -42,7 +42,7 @@ public class TestServer {
         }
     }
 
-    // Implementation of service.
+    // Implementation of service
     private class GreeterImpl extends GreeterGrpc.GreeterImplBase {
         public void testSomeThing(TestRequest request, StreamObserver<TestResponse> responseObserver) {
             TestResponse build = TestResponse.newBuilder().setMessage(request.getName()+ " :Success.").build();

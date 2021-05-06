@@ -25,7 +25,7 @@ public class TestClient {
     public void shutdown() throws InterruptedException {
         channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
     }
-    // Send request to server and print response.
+    // Send request to server and print response
     public void testResult(String name) {
         TestRequest request = TestRequest.newBuilder().setName(name).build();
         TestResponse response = blockingStub.testSomeThing(request);

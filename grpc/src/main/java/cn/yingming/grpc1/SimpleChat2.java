@@ -72,7 +72,7 @@ public class SimpleChat2 implements Receiver{
                 Message msg = new ObjectMessage(null, line);
                 channel.send(msg);
             } catch (Exception e) {
-                // TODO: handle exception
+                // TODO: handle exception.
             }
         }
 

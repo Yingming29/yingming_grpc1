@@ -2,7 +2,6 @@ package cn.yingming.grpc1;
 
 import org.jgroups.JChannel;
 import org.jgroups.Message;
-import org.jgroups.ObjectMessage;
 import org.jgroups.Receiver;
 import org.jgroups.View;
 

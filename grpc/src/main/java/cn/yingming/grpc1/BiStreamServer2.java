@@ -58,7 +58,7 @@ public class BiStreamServer2 {
         server.start();
         server.blockUntilShutdown();
     }
-    // Service.
+    // Service
     private class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
         // HashMap for storing the clients, includes uuid and StreamObserver
         protected final ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients =

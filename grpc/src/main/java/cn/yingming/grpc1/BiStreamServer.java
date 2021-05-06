@@ -22,7 +22,7 @@ import cn.yingming.grpc1.Utils;
 
 public class BiStreamServer implements Receiver {
     private int t;
-    // The port of server
+    // The port of server.
     private int port;
     // The server of gRPC
     private Server server;

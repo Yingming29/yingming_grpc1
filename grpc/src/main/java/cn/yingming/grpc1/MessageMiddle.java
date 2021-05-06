@@ -10,7 +10,7 @@ public class MessageMiddle {
         this.msgMessage = msgMessage;
         this.msgTimestamp = msgTimestamp;
     }
-    //
+    //.
     public static String parseMsgToLine(MessageMiddle msg) throws Exception {
         String line;
         if (msg.msgName != null && msg.msgMessage != null && msg.msgTimestamp != null ){
