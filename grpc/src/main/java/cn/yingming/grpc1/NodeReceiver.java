@@ -5,6 +5,7 @@ import org.jgroups.Receiver;
 import org.jgroups.View;
 
 public class NodeReceiver implements Receiver {
+
     @Override
     public void viewAccepted(View new_view) {
         System.out.println("** view: " + new_view);
@@ -14,4 +15,5 @@ public class NodeReceiver implements Receiver {
         String line = msg.getSrc() + ": " + msg.getObject();
         System.out.println(line);
     }
+
 }

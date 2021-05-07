@@ -2,43 +2,42 @@ package cn.yingming.grpc1;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.bistream.CommunicateGrpc;
-import io.grpc.bistream.StreamRequest;
-import io.grpc.bistream.StreamResponse;
+import io.grpc.bistream.*;
 import io.grpc.stub.StreamObserver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
-import java.util.stream.Stream;
+
 
 public class BiStreamClient {
     private final ManagedChannel channel;
     // not used because they just have Bi-directional Mode. Just need asynStub
     private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
     private final CommunicateGrpc.CommunicateStub asynStub;
-    private static final String host = "127.0.0.1";
-    private static final int port = 50051;
-    private String client_add;
+    private String host;
+    private int port;
     private String uuid;
-
+    private String name;
+    private int count;
     public BiStreamClient(String host, int port) {
+        this.host = host;
+        this.port = port;
         // Build Channel and use plaintext
-        channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+        this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
         // Generate Stub
-        // System.out.println(channel.toString());
-        blockingStub = CommunicateGrpc.newBlockingStub(channel);
-        asynStub = CommunicateGrpc.newStub(channel);
-        uuid = UUID.randomUUID().toString();
-        // Get its ip address
+        this.blockingStub = CommunicateGrpc.newBlockingStub(channel);
+        this.asynStub = CommunicateGrpc.newStub(channel);
+        this.uuid = UUID.randomUUID().toString();
+        this.count = 0;
     }
 
     public void start(String name){
-        // There is also a StreamObserver for checking the continued requests.
+        // Service 1
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
             public void onNext(StreamResponse streamResponse) {
@@ -55,8 +54,28 @@ public class BiStreamClient {
                 System.out.println("onCompleted");
             }
         });
+        // Service 2
+        StreamObserver<StreamReqAsk> askStreamObserver = asynStub.ask(new StreamObserver<StreamRepAsk>() {
+            @Override
+            public void onNext(StreamRepAsk response) {
+                if (response.getSurvival()){
+                    count++;
+                }
+            }
+            @Override
+            public void onError(Throwable throwable) {
+                System.out.println(throwable.getMessage());
+            }
 
-        // Join.
+            @Override
+            public void onCompleted() {
+                System.out.println("onCompleted");
+            }
+        });
+
+
+        // Join
+        System.out.println(Thread.currentThread());
         StreamRequest joinReq = StreamRequest.newBuilder()
                 .setJoin(true)
                 .setSource(uuid)
@@ -66,6 +85,10 @@ public class BiStreamClient {
         requestStreamObserver.onNext(joinReq);
         // Stdin Input
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+
+        askThread threadForAsk = new askThread(askStreamObserver);
+        Thread thread = new Thread(threadForAsk);
+        thread.start();
 
         while(true){
             try {
@@ -83,39 +106,74 @@ public class BiStreamClient {
                         .setTimestamp(dft.format(d))
                         .build();
                 requestStreamObserver.onNext(msgReq);
+                //
+                System.out.println(count);
             }
             catch(Exception e){
                 e.printStackTrace();
             }
         }
     }
+    /*
+    public void startAsk() {
+        StreamObserver<StreamReqAsk> requestStreamObserver = asynStub.ask(new StreamObserver<StreamRepAsk>() {
+            @Override
+            public void onNext(StreamRepAsk response) {
+                if (response.getSurvival()){
+                    count++;
+                }
+            }
+            @Override
+            public void onError(Throwable throwable) {
+                System.out.println(throwable.getMessage());
+            }
 
+            @Override
+            public void onCompleted() {
+                System.out.println("onCompleted");
+            }
+        });
+
+
+    }
+
+     */
     public String setName() throws IOException {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Input Name.");
         System.out.println(">");
         System.out.flush();
-        String line = in.readLine();
+        String line = in.readLine().trim();
+        this.name = line;
         return line;
 
-        // Print the local ip address.
-        /*
-        try{
-            InetAddress address = InetAddress.getLocalHost();
-            System.out.println(address.getHostAddress());
-            System.out.println(address.getAddress());
-            return address.getHostAddress();
-        } catch (Exception e){
-            System.out.println("Get client address error.");
-            return null;
+    }
+
+    class askThread implements Runnable{
+
+        private StreamObserver<StreamReqAsk> askStreamObserver;
+        askThread(StreamObserver<StreamReqAsk> observer){
+            this.askStreamObserver = observer;
         }
 
-         */
-
+        @Override
+        public void run() {
+            while(true){
+                try{
+                    Thread.sleep(1000);
+                } catch(InterruptedException e){
+                    e.printStackTrace();
+                }
+                StreamReqAsk req = StreamReqAsk.newBuilder()
+                        .setSource(uuid)
+                        .build();
+                this.askStreamObserver.onNext(req);
+            }
+        }
     }
     public static void main(String[] args) throws IOException {
-        BiStreamClient client = new BiStreamClient(host, port);
+        BiStreamClient client = new BiStreamClient(args[0], Integer.parseInt(args[1]));
         String nameStr = client.setName();
         client.start(nameStr);
     }

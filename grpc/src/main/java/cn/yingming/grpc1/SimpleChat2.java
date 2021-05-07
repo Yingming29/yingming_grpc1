@@ -22,8 +22,8 @@ public class SimpleChat2 implements Receiver{
     final List<String> state = new LinkedList<String>();
     private void start() throws Exception {
         channel = new JChannel();
-        channel.setReceiver(this).connect("NodesCluster");
-        channel.getState(null, 10000);
+        channel.setReceiver(this).connect("NodeCluster");
+        //channel.getState(null, 10000);
         eventLoop();
         channel.close();
     }
@@ -35,9 +35,12 @@ public class SimpleChat2 implements Receiver{
     public void receive(Message msg) {
         String line = msg.getSrc() + ":" + msg.getObject();
         System.out.println(line);
+        /*
         synchronized (state) {
             state.add(line);
         }
+
+         */
     }
     @Override
     public void getState(OutputStream output) throws Exception {

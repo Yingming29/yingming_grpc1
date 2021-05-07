@@ -48,6 +48,37 @@ public final class CommunicateGrpc {
     return getCreateConnectionMethod;
   }
 
+  private static volatile io.grpc.MethodDescriptor<io.grpc.bistream.StreamReqAsk,
+      io.grpc.bistream.StreamRepAsk> getAskMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "ask",
+      requestType = io.grpc.bistream.StreamReqAsk.class,
+      responseType = io.grpc.bistream.StreamRepAsk.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+  public static io.grpc.MethodDescriptor<io.grpc.bistream.StreamReqAsk,
+      io.grpc.bistream.StreamRepAsk> getAskMethod() {
+    io.grpc.MethodDescriptor<io.grpc.bistream.StreamReqAsk, io.grpc.bistream.StreamRepAsk> getAskMethod;
+    if ((getAskMethod = CommunicateGrpc.getAskMethod) == null) {
+      synchronized (CommunicateGrpc.class) {
+        if ((getAskMethod = CommunicateGrpc.getAskMethod) == null) {
+          CommunicateGrpc.getAskMethod = getAskMethod =
+              io.grpc.MethodDescriptor.<io.grpc.bistream.StreamReqAsk, io.grpc.bistream.StreamRepAsk>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "ask"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  io.grpc.bistream.StreamReqAsk.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  io.grpc.bistream.StreamRepAsk.getDefaultInstance()))
+              .setSchemaDescriptor(new CommunicateMethodDescriptorSupplier("ask"))
+              .build();
+        }
+      }
+    }
+    return getAskMethod;
+  }
+
   /**
    * Creates a new async stub that supports all call types for the service
    */
@@ -106,6 +137,13 @@ public final class CommunicateGrpc {
       return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(getCreateConnectionMethod(), responseObserver);
     }
 
+    /**
+     */
+    public io.grpc.stub.StreamObserver<io.grpc.bistream.StreamReqAsk> ask(
+        io.grpc.stub.StreamObserver<io.grpc.bistream.StreamRepAsk> responseObserver) {
+      return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(getAskMethod(), responseObserver);
+    }
+
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
           .addMethod(
@@ -115,6 +153,13 @@ public final class CommunicateGrpc {
                 io.grpc.bistream.StreamRequest,
                 io.grpc.bistream.StreamResponse>(
                   this, METHODID_CREATE_CONNECTION)))
+          .addMethod(
+            getAskMethod(),
+            io.grpc.stub.ServerCalls.asyncBidiStreamingCall(
+              new MethodHandlers<
+                io.grpc.bistream.StreamReqAsk,
+                io.grpc.bistream.StreamRepAsk>(
+                  this, METHODID_ASK)))
           .build();
     }
   }
@@ -142,6 +187,14 @@ public final class CommunicateGrpc {
         io.grpc.stub.StreamObserver<io.grpc.bistream.StreamResponse> responseObserver) {
       return io.grpc.stub.ClientCalls.asyncBidiStreamingCall(
           getChannel().newCall(getCreateConnectionMethod(), getCallOptions()), responseObserver);
+    }
+
+    /**
+     */
+    public io.grpc.stub.StreamObserver<io.grpc.bistream.StreamReqAsk> ask(
+        io.grpc.stub.StreamObserver<io.grpc.bistream.StreamRepAsk> responseObserver) {
+      return io.grpc.stub.ClientCalls.asyncBidiStreamingCall(
+          getChannel().newCall(getAskMethod(), getCallOptions()), responseObserver);
     }
   }
 
@@ -182,6 +235,7 @@ public final class CommunicateGrpc {
   }
 
   private static final int METHODID_CREATE_CONNECTION = 0;
+  private static final int METHODID_ASK = 1;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -213,6 +267,9 @@ public final class CommunicateGrpc {
         case METHODID_CREATE_CONNECTION:
           return (io.grpc.stub.StreamObserver<Req>) serviceImpl.createConnection(
               (io.grpc.stub.StreamObserver<io.grpc.bistream.StreamResponse>) responseObserver);
+        case METHODID_ASK:
+          return (io.grpc.stub.StreamObserver<Req>) serviceImpl.ask(
+              (io.grpc.stub.StreamObserver<io.grpc.bistream.StreamRepAsk>) responseObserver);
         default:
           throw new AssertionError();
       }
@@ -265,6 +322,7 @@ public final class CommunicateGrpc {
           serviceDescriptor = result = io.grpc.ServiceDescriptor.newBuilder(SERVICE_NAME)
               .setSchemaDescriptor(new CommunicateFileDescriptorSupplier())
               .addMethod(getCreateConnectionMethod())
+              .addMethod(getAskMethod())
               .build();
         }
       }

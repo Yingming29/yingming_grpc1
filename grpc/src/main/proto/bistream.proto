@@ -9,6 +9,9 @@ package cn.yingming.grpc1;
 service Communicate {
   rpc createConnection(stream StreamRequest) returns (stream StreamResponse) {
   }
+  rpc ask(stream StreamReqAsk) returns (stream StreamRepAsk) {
+  }
+
 }
 // define the message type
 message StreamRequest {
@@ -23,4 +26,12 @@ message StreamResponse {
   string name = 1;
   string message = 2;
   string timestamp = 3;
+}
+
+//
+message StreamReqAsk {
+  string source = 1;
+}
+message StreamRepAsk{
+  bool survival = 1;
 }
