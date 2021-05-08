@@ -1,5 +1,6 @@
 cn/yingming/grpc1/NodeServer.class
 io/grpc/bistream/CommunicateGrpc$1.class
+cn/yingming/grpc1/NodeServer3rd.class
 io/grpc/test1/TestRequest$Builder.class
 io/grpc/test1/GreeterGrpc$MethodHandlers.class
 io/grpc/test1/TestResponse$1.class
@@ -38,6 +39,7 @@ cn/yingming/grpc1/BiStreamServer$1.class
 io/grpc/test1/GreeterGrpc$GreeterStub.class
 cn/yingming/grpc1/test.class
 cn/yingming/grpc1/BiStreamServer$CommunicateImpl$1.class
+cn/yingming/grpc1/NodeServer3rd$1.class
 io/grpc/bistream/StreamReqAskOrBuilder.class
 io/grpc/test1/Proto1.class
 io/grpc/bistream/StreamRepAsk.class
@@ -55,6 +57,7 @@ cn/yingming/grpc1/SimpleChat2.class
 cn/yingming/grpc1/BiStreamClient$askThread.class
 io/grpc/bistream/StreamRequestOrBuilder.class
 io/grpc/bistream/CommunicateGrpc$3.class
+cn/yingming/grpc1/NodeServer3rd$CommunicateImpl.class
 cn/yingming/grpc1/BiStreamClient$1.class
 io/grpc/test1/GreeterGrpc$GreeterImplBase.class
 io/grpc/bistream/CommunicateGrpc$MethodHandlers.class
@@ -62,10 +65,12 @@ cn/yingming/grpc1/TestServer$GreeterImpl.class
 io/grpc/bistream/CommunicateGrpc$CommunicateBaseDescriptorSupplier.class
 io/grpc/bistream/StreamResponseOrBuilder.class
 io/grpc/test1/TestResponseOrBuilder.class
+cn/yingming/grpc1/NodeServer3rd$CommunicateImpl$1.class
 io/grpc/test1/GreeterGrpc$GreeterBaseDescriptorSupplier.class
 io/grpc/bistream/CommunicateGrpc$CommunicateImplBase.class
 cn/yingming/grpc1/NodeServer$CommunicateImpl.class
 io/grpc/bistream/CommunicateGrpc.class
+cn/yingming/grpc1/NodeServer3rd$ClientAddInterceptor.class
 io/grpc/bistream/StreamRequest$Builder.class
 cn/yingming/grpc1/NodeServer$ClientAddInterceptor.class
 io/grpc/test1/TestRequest$1.class

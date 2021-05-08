@@ -54,25 +54,6 @@ public class BiStreamClient {
                 System.out.println("onCompleted");
             }
         });
-        // Service 2
-        StreamObserver<StreamReqAsk> askStreamObserver = asynStub.ask(new StreamObserver<StreamRepAsk>() {
-            @Override
-            public void onNext(StreamRepAsk response) {
-                if (response.getSurvival()){
-                    count++;
-                }
-            }
-            @Override
-            public void onError(Throwable throwable) {
-                System.out.println(throwable.getMessage());
-            }
-
-            @Override
-            public void onCompleted() {
-                System.out.println("onCompleted");
-            }
-        });
-
 
         // Join
         System.out.println(Thread.currentThread());
@@ -85,10 +66,6 @@ public class BiStreamClient {
         requestStreamObserver.onNext(joinReq);
         // Stdin Input
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-
-        askThread threadForAsk = new askThread(askStreamObserver);
-        Thread thread = new Thread(threadForAsk);
-        // thread.start();
 
         while(true){
             try {
@@ -114,30 +91,7 @@ public class BiStreamClient {
             }
         }
     }
-    /*
-    public void startAsk() {
-        StreamObserver<StreamReqAsk> requestStreamObserver = asynStub.ask(new StreamObserver<StreamRepAsk>() {
-            @Override
-            public void onNext(StreamRepAsk response) {
-                if (response.getSurvival()){
-                    count++;
-                }
-            }
-            @Override
-            public void onError(Throwable throwable) {
-                System.out.println(throwable.getMessage());
-            }
 
-            @Override
-            public void onCompleted() {
-                System.out.println("onCompleted");
-            }
-        });
-
-
-    }
-
-     */
     public String setName() throws IOException {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -150,28 +104,6 @@ public class BiStreamClient {
 
     }
 
-    class askThread implements Runnable{
-
-        private StreamObserver<StreamReqAsk> askStreamObserver;
-        askThread(StreamObserver<StreamReqAsk> observer){
-            this.askStreamObserver = observer;
-        }
-
-        @Override
-        public void run() {
-            while(true){
-                try{
-                    Thread.sleep(1000);
-                } catch(InterruptedException e){
-                    e.printStackTrace();
-                }
-                StreamReqAsk req = StreamReqAsk.newBuilder()
-                        .setSource(uuid)
-                        .build();
-                this.askStreamObserver.onNext(req);
-            }
-        }
-    }
     public static void main(String[] args) throws IOException {
         BiStreamClient client = new BiStreamClient(args[0], Integer.parseInt(args[1]));
         String nameStr = client.setName();

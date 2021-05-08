@@ -1,5 +1,6 @@
 package cn.yingming.grpc1;
 
+import io.grpc.bistream.CommunicateGrpc;
 import org.jgroups.*;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ public class NodeJChannel extends NodeReceiver{
     String cluster_name;
     ArrayList<String> msgList;
     ReentrantLock lock;
+    NodeServer3rd.CommunicateImpl service;
     NodeJChannel(String node_name, String cluster_name, ArrayList<String> msgList) throws Exception {
 
         this.channel = new JChannel();
@@ -21,20 +23,37 @@ public class NodeJChannel extends NodeReceiver{
         this.msgList = msgList;
         this.channel.setReceiver(this).connect(cluster_name);
         this.lock = new ReentrantLock();
+        this.service = null;
     }
+
+
     @Override
     public void receive(Message msg) {
         String line = msg.getSrc() + ": " + msg.getObject();
         System.out.println(line);
+        /*
         this.lock.lock();;
         try{
             this.msgList.add(line);
         } finally {
             this.lock.unlock();
         }
+        */
+
 
         System.out.println("Receive successfully.");
-        System.out.println(this.msgList);
+        System.out.println("The current message list: "+ this.msgList);
+
+        this.lock.lock();;
+        try{
+            this.service.broadcast(line);
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
+    public void setService(NodeServer3rd.CommunicateImpl gRPCservice){
+        this.service = gRPCservice;
     }
 
 }

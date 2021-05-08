@@ -25,3 +25,4 @@
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/java/io/grpc/bistream/StreamReqAsk.java
 /home/yingming/IdeaProjects/yingming/grpc/target/generated-sources/protobuf/java/io/grpc/test1/TestResponse.java
 /home/yingming/IdeaProjects/yingming/grpc/src/main/java/cn/yingming/grpc1/BiStreamClient.java
+/home/yingming/IdeaProjects/yingming/grpc/src/main/java/cn/yingming/grpc1/NodeServer3rd.java

@@ -83,15 +83,31 @@ public class NodeServer3rd {
     // always to check the shared list.
     private void eventLoop(){
         while(true){
-            // ?????????
-            int test = this.msgList.size();
-            System.out.println(test);
-            if (!(test == 0)){
+            if (this.msgList.size() != 0) {
+                System.out.println("broadcast");
+                // lock
+                lock.lock();
+                try {
+                    // int num = msgList.size();
+                    //System.out.printf("Found %d message from other JChannels, broadcast to clients. ", num);
+                    // broadcast all messages
+
+                    this.gRPCservice.broadcast(this.msgList.get(0));
+
+                    // clear message list
+                    msgList.remove(0);
+
+                } finally {
+                    lock.unlock();
+                }
+            }
+            /*
+            if (this.msgList. !=0){
                 System.out.println("broadcast");
                 // lock
                 lock.lock();
                 try{
-                    int num = this.msgList.size();
+                    int num = msgList.size();
                     System.out.printf("Found %d message from other JChannels, broadcast to clients. ", num);
                     // broadcast all messages
                     for (int i = 0; i < num; i++) {
@@ -105,18 +121,28 @@ public class NodeServer3rd {
                     lock.unlock();
                 }
             }
+
+             */
         }
     }
+
     public static void main(String[] args) throws Exception {
         // Port, NodeName, ClusterName
         final NodeServer3rd server = new NodeServer3rd(Integer.parseInt(args[0]), args[1], args[2]);
         // start gRPC service
         server.start();
-        server.eventLoop();
+        // server.eventLoop();
+        server.giveEntry(server.gRPCservice);
         server.blockUntilShutdown();
     }
+
+    //
+    public void giveEntry(CommunicateImpl gRPCservice){
+        this.jchannel.setService(gRPCservice);
+
+    }
     // Service
-    private class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
+    class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
         // HashMap for storing the clients, includes uuid and StreamObserver.
         private final ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients;
         protected final ReentrantLock lock = new ReentrantLock();
@@ -162,49 +188,6 @@ public class NodeServer3rd {
                 }
             };
         }
-
-        /*
-        public StreamObserver<StreamReqAsk> ask(StreamObserver<StreamRepAsk> responseObserver){
-            return new StreamObserver<StreamReqAsk>() {
-                @Override
-                public void onNext(StreamReqAsk streamReqAsk) {
-                    if (msgList.size() == 0){
-                        // response, null
-                        StreamRepAsk repAsk = StreamRepAsk.newBuilder()
-                                .setSurvival(true)
-                                .build();
-                        responseObserver.onNext(repAsk);
-                    } else{
-
-                        lock.lock();
-                        try{
-                            // broadcast message from other JChannels
-                            for (int i = 0; i < msgList.size(); i++) {
-                                broadcast(msgList.get(i));
-                            }
-                            msgList.clear();
-                            System.out.println("Broadcast messages and clear message list.");
-                        }
-                        // run after return, confirm the lock will be unlock.
-                        finally {
-                            lock.unlock();
-                        }
-                    }
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    System.out.println(throwable.getMessage());
-                }
-
-                @Override
-                public void onCompleted() {
-                    responseObserver.onCompleted();
-                }
-            };
-        }
-
-         */
 
         protected void join(StreamRequest req, StreamObserver<StreamResponse> responseObserver){
             // 1. get lock
