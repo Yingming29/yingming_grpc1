@@ -234,7 +234,7 @@ public class BiStreamServer implements Receiver {
         node.startFiles(args[1]);
         //node.print();
         node.startGrpc();
-        node.startJchannel();
+        node.print();
         node.blockUntilShutdown();
     }
 }

@@ -8,13 +8,17 @@ import io.grpc.stub.StreamObserver;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
-//
-public class BiStreamClient {
+
+/* The second design. Client has two threads, main thread is used for stdin and gRPC,
+another thread is used to send ask request. It always sends this request and ask the server
+to check whether the server have received messages from other JChannels.
+Each client has two service. The first one is for exchange messages. The second one is for check message and survival.
+ */
+public class BiStreamClient2nd {
     private final ManagedChannel channel;
     // not used because they just have Bi-directional Mode. Just need asynStub
     private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
@@ -24,7 +28,7 @@ public class BiStreamClient {
     private String uuid;
     private String name;
     private int count;
-    public BiStreamClient(String host, int port) {
+    public BiStreamClient2nd(String host, int port) {
         this.host = host;
         this.port = port;
         // Build Channel and use plaintext
@@ -88,7 +92,7 @@ public class BiStreamClient {
 
         askThread threadForAsk = new askThread(askStreamObserver);
         Thread thread = new Thread(threadForAsk);
-        // thread.start();
+        thread.start();
 
         while(true){
             try {
@@ -114,7 +118,7 @@ public class BiStreamClient {
             }
         }
     }
-    /*
+
     public void startAsk() {
         StreamObserver<StreamReqAsk> requestStreamObserver = asynStub.ask(new StreamObserver<StreamRepAsk>() {
             @Override
@@ -137,7 +141,7 @@ public class BiStreamClient {
 
     }
 
-     */
+
     public String setName() throws IOException {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -173,7 +177,7 @@ public class BiStreamClient {
         }
     }
     public static void main(String[] args) throws IOException {
-        BiStreamClient client = new BiStreamClient(args[0], Integer.parseInt(args[1]));
+        BiStreamClient2nd client = new BiStreamClient2nd(args[0], Integer.parseInt(args[1]));
         String nameStr = client.setName();
         client.start(nameStr);
     }
