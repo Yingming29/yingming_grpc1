@@ -15,7 +15,7 @@ public class NodeJChannel extends NodeReceiver{
     NodeServer3rd.CommunicateImpl service;
     NodeJChannel(String node_name, String cluster_name) throws Exception {
 
-        this.channel = new JChannel();
+        this.channel = new JChannel("grpc/protocols/udp.xml");
         this.user_name = System.getProperty("user.name", "n/a");
         this.node_name = node_name;
         this.cluster_name = cluster_name;
