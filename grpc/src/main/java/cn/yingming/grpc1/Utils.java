@@ -12,8 +12,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static cn.yingming.grpc1.MessageMiddle.parseMsgToLine;
-
 public class Utils {
     public static String streamToStrMsg(StreamRequest req){
         String name;
@@ -106,7 +104,7 @@ public class Utils {
             System.out.println("Receive message from Nodes.");
         }
     }
-
+    /*
     // Add the new message as a line into .txt file.
     public static void addMsgToTxt(MessageMiddle msg, String nodeName, String type) throws Exception {
         String filePath;
@@ -133,6 +131,8 @@ public class Utils {
         }
 
     }
+
+     */
 
     // Clear lines in .txt file.
     public static void clearTxt(String filePath) throws Exception {

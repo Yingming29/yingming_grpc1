@@ -104,6 +104,7 @@ public class BiStreamClient {
 
     public static void main(String[] args) throws IOException {
         BiStreamClient client = new BiStreamClient(args[0], Integer.parseInt(args[1]));
+        System.out.printf("Connect to gRPC server: %s:%s \n", args[0], Integer.parseInt(args[1]));
         String nameStr = client.setName();
         client.start(nameStr);
     }

@@ -81,6 +81,7 @@ public class NodeServer3rd {
     public static void main(String[] args) throws Exception {
         // Port, NodeName, ClusterName
         final NodeServer3rd server = new NodeServer3rd(Integer.parseInt(args[0]), args[1], args[2]);
+        System.out.printf("Inf: %s %s %s \n",args[0], args[1], args[2]);
         // start gRPC service
         server.start();
         server.giveEntry(server.gRPCservice);
@@ -201,6 +202,7 @@ public class NodeServer3rd {
         protected void forward(StreamRequest req){
             String strMsg = Utils.streamToStrMsg(req);
             Message msg = new ObjectMessage(null, strMsg);
+            msg.setFlagIfAbsent(Message.TransientFlag.DONT_LOOPBACK);
             try {
                 this.jchannel.channel.send(msg);
             } catch (Exception e) {
