@@ -34,7 +34,7 @@ public class NodeServer {
 
         // jChannel and gRPC server of this node
         this.msgList = new ArrayList<>();
-        this.jchannel = new NodeJChannel(nodeName, jClusterName, this.msgList);
+        // this.jchannel = new NodeJChannel(nodeName, jClusterName, this.msgList);
         this.server = ServerBuilder.forPort(port)
                 .addService(new CommunicateImpl(jchannel))
                 .intercept(new ClientAddInterceptor())
@@ -84,11 +84,11 @@ public class NodeServer {
                 new ConcurrentHashMap<>();
         protected final ReentrantLock lock = new ReentrantLock();
         protected final NodeJChannel jchannel;
-        protected final ArrayList<String> msgList;
+        //protected final ArrayList<String> msgList;
 
         private CommunicateImpl(NodeJChannel jchannel) throws Exception {
             this.jchannel = jchannel;
-            this.msgList = jchannel.msgList;
+            //this.msgList = jchannel.msgList;
         }
 
         public StreamObserver<StreamRequest> createConnection(StreamObserver<StreamResponse> responseObserver){

@@ -83,8 +83,6 @@ public class BiStreamClient {
                         .setTimestamp(dft.format(d))
                         .build();
                 requestStreamObserver.onNext(msgReq);
-                //
-                System.out.println(count);
             }
             catch(Exception e){
                 e.printStackTrace();

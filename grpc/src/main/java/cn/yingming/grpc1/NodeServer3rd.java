@@ -16,26 +16,23 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class NodeServer3rd {
 
-    // 1. Port and server used for gRPC
+    // 1. Port and gRPC server of node
     private int port;
     private Server server;
-    // 2. JGroups part:
+    // 2. Node name, cluster name, JChannel of node
     String nodeName;
     String jClusterName;
     NodeJChannel jchannel;
-    // 3.shared part
-    // When JChannel receives message, it stores ths message to the sharedList, and broadcast the message to its clients.
-    ArrayList<String> msgList;
-    ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients;
+    // 3.shared part.
+    ArrayList<String> msgList; // ? can be removed
     CommunicateImpl gRPCservice;
     ReentrantLock lock;
     // <no, ip>, it stores all ip address for clients, who are connecting to this server.
     private ConcurrentHashMap<Integer, String> ips;
     public NodeServer3rd(int port, String nodeName, String jClusterName) throws Exception {
-        // 1
+        // 1.
         this.port = port;
         this.nodeName = nodeName;
-        this.clients = new ConcurrentHashMap<>();
         //
         this.jClusterName = jClusterName;
         // not useful
@@ -43,8 +40,8 @@ public class NodeServer3rd {
 
         // shared
         this.msgList = new ArrayList<>();
-        this.jchannel = new NodeJChannel(nodeName, jClusterName, this.msgList);
-        this.gRPCservice = new CommunicateImpl(this.jchannel, this.clients, this.msgList);
+        this.jchannel = new NodeJChannel(nodeName, jClusterName);
+        this.gRPCservice = new CommunicateImpl(this.jchannel);
         this.server = ServerBuilder.forPort(port)
                 .addService(this.gRPCservice)
                 .intercept(new ClientAddInterceptor())
@@ -80,58 +77,12 @@ public class NodeServer3rd {
         }
     }
 
-    // always to check the shared list.
-    private void eventLoop(){
-        while(true){
-            if (this.msgList.size() != 0) {
-                System.out.println("broadcast");
-                // lock
-                lock.lock();
-                try {
-                    // int num = msgList.size();
-                    //System.out.printf("Found %d message from other JChannels, broadcast to clients. ", num);
-                    // broadcast all messages
-
-                    this.gRPCservice.broadcast(this.msgList.get(0));
-
-                    // clear message list
-                    msgList.remove(0);
-
-                } finally {
-                    lock.unlock();
-                }
-            }
-            /*
-            if (this.msgList. !=0){
-                System.out.println("broadcast");
-                // lock
-                lock.lock();
-                try{
-                    int num = msgList.size();
-                    System.out.printf("Found %d message from other JChannels, broadcast to clients. ", num);
-                    // broadcast all messages
-                    for (int i = 0; i < num; i++) {
-                        // broadcast message
-                        this.gRPCservice.broadcast(this.msgList.get(i));
-                    }
-                    // clear message list
-                    msgList.clear();
-
-                } finally {
-                    lock.unlock();
-                }
-            }
-
-             */
-        }
-    }
 
     public static void main(String[] args) throws Exception {
         // Port, NodeName, ClusterName
         final NodeServer3rd server = new NodeServer3rd(Integer.parseInt(args[0]), args[1], args[2]);
         // start gRPC service
         server.start();
-        // server.eventLoop();
         server.giveEntry(server.gRPCservice);
         server.blockUntilShutdown();
     }
@@ -144,16 +95,12 @@ public class NodeServer3rd {
     // Service
     class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
         // HashMap for storing the clients, includes uuid and StreamObserver.
-        private final ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients;
+        private final ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients = new ConcurrentHashMap<>();
         protected final ReentrantLock lock = new ReentrantLock();
         protected final NodeJChannel jchannel;
-        private ArrayList<String> msgList;
 
-        private CommunicateImpl(NodeJChannel jchannel, ConcurrentHashMap<String, StreamObserver<StreamResponse>> sharedMap,
-                                ArrayList<String> sharedList) throws Exception {
+        private CommunicateImpl(NodeJChannel jchannel) throws Exception {
             this.jchannel = jchannel;
-            this.clients = sharedMap;
-            this.msgList = sharedList;
         }
 
         public StreamObserver<StreamRequest> createConnection(StreamObserver<StreamResponse> responseObserver){
@@ -168,7 +115,7 @@ public class NodeServer3rd {
 
                     }
                     else{
-                        System.out.println(streamRequest.getName() + " sends message: " + streamRequest.getMessage()
+                        System.out.println("[gRPC] " + streamRequest.getName() + " sends message: " + streamRequest.getMessage()
                                 + " at " + streamRequest.getTimestamp());
                         // broadcast msg to gRPC clients
                         broadcast(streamRequest);
