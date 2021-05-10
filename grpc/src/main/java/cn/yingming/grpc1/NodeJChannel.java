@@ -1,9 +1,7 @@
 package cn.yingming.grpc1;
 
-import io.grpc.bistream.CommunicateGrpc;
 import org.jgroups.*;
 
-import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class NodeJChannel extends NodeReceiver{
@@ -12,7 +10,7 @@ public class NodeJChannel extends NodeReceiver{
     String node_name;
     String cluster_name;
     ReentrantLock lock;
-    NodeServer3rd.CommunicateImpl service;
+    NodeServer.CommunicateImpl service;
     NodeJChannel(String node_name, String cluster_name) throws Exception {
 
         this.channel = new JChannel("grpc/protocols/udp.xml");
@@ -38,7 +36,7 @@ public class NodeJChannel extends NodeReceiver{
         }
     }
 
-    public void setService(NodeServer3rd.CommunicateImpl gRPCservice){
+    public void setService(NodeServer.CommunicateImpl gRPCservice){
         this.service = gRPCservice;
     }
 

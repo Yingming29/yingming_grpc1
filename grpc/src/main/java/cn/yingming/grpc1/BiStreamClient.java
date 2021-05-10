@@ -12,31 +12,35 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 
 //
 public class BiStreamClient {
-    private final ManagedChannel channel;
+    private ManagedChannel channel;
     // not used because they just have Bi-directional Mode. Just need asynStub
-    private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
-    private final CommunicateGrpc.CommunicateStub asynStub;
+    // private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
+    private CommunicateGrpc.CommunicateStub asynStub;
     private String host;
     private int port;
     private String uuid;
     private String name;
-    private int count;
+    private final ReentrantLock lock;
+    private boolean flag;
     public BiStreamClient(String host, int port) {
         this.host = host;
         this.port = port;
         // Build Channel and use plaintext
         this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
         // Generate Stub
-        this.blockingStub = CommunicateGrpc.newBlockingStub(channel);
+        // this.blockingStub = CommunicateGrpc.newBlockingStub(channel);
         this.asynStub = CommunicateGrpc.newStub(channel);
         this.uuid = UUID.randomUUID().toString();
-        this.count = 0;
+        this.name = null;
+        this.lock = new ReentrantLock();
+        this.flag = false;
     }
 
-    public void start(String name){
+    private void start(String name){
         // Service 1
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
@@ -47,6 +51,9 @@ public class BiStreamClient {
             @Override
             public void onError(Throwable throwable) {
                 System.out.println(throwable.getMessage());
+                flag = false;
+                System.out.println("The client will reconnect to the next gRPC server.");
+
             }
 
             @Override
@@ -54,20 +61,13 @@ public class BiStreamClient {
                 System.out.println("onCompleted");
             }
         });
+        // Join request.
+        join(requestStreamObserver);
 
-        // Join
-        System.out.println(Thread.currentThread());
-        StreamRequest joinReq = StreamRequest.newBuilder()
-                .setJoin(true)
-                .setSource(uuid)
-                .setName(name)
-                .build();
-        System.out.println(joinReq.toString());
-        requestStreamObserver.onNext(joinReq);
         // Stdin Input
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
-        while(true){
+        while(this.flag){
             try {
                 System.out.println(">");
                 System.out.flush();
@@ -90,7 +90,19 @@ public class BiStreamClient {
         }
     }
 
-    public String setName() throws IOException {
+    private void join(StreamObserver requestStreamObserver){
+        // Join
+        StreamRequest joinReq = StreamRequest.newBuilder()
+                .setJoin(true)
+                .setSource(uuid)
+                .setName(name)
+                .build();
+        System.out.println(joinReq.toString());
+        requestStreamObserver.onNext(joinReq);
+        this.flag = true;
+    }
+
+    private String setName() throws IOException {
 
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Input Name.");
@@ -102,10 +114,21 @@ public class BiStreamClient {
 
     }
 
+    private void reconnect(){
+        this.lock.lock();
+        try{
+            this.channel = ManagedChannelBuilder.forAddress("127.0.0.1", 50052).usePlaintext().build();
+            this.asynStub = CommunicateGrpc.newStub(this.channel);
+        }finally {
+            this.lock.unlock();
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         BiStreamClient client = new BiStreamClient(args[0], Integer.parseInt(args[1]));
         System.out.printf("Connect to gRPC server: %s:%s \n", args[0], Integer.parseInt(args[1]));
         String nameStr = client.setName();
         client.start(nameStr);
+        // System.out.println(123);
     }
 }
