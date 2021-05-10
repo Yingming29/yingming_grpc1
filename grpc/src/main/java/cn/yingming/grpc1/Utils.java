@@ -2,6 +2,9 @@ package cn.yingming.grpc1;
 
 import io.grpc.bistream.StreamRequest;
 
+import java.io.File;
+import java.io.IOException;
+
 public class Utils {
     public static String streamToStrMsg(StreamRequest req){
         String name;
@@ -28,4 +31,16 @@ public class Utils {
         return strMsg;
     }
 
+    public static void createTxtFile(String name) throws IOException {
+        String fileName = "grpc/txt/" + name + "-signal.txt";
+        File sharedFileName1 = new File(fileName);
+        if (!sharedFileName1.exists()) {
+            sharedFileName1.createNewFile();
+            System.out.println(name + ": Create .txt file for server state and signal.");
+        } else {
+            sharedFileName1.delete();
+            sharedFileName1.createNewFile();
+            System.out.println(name + ": Delete existing the file and Create .txt file.");
+        }
+    }
 }
