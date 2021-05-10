@@ -10,6 +10,7 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 // gRPC client
@@ -20,27 +21,27 @@ public class BiStreamClient {
     private CommunicateGrpc.CommunicateStub asynStub;
     private String host;
     private int port;
-    private String uuid;
+    public String uuid;
     private String name;
     private final ReentrantLock lock;
-
+    private AtomicBoolean connect;
+    BufferedReader in;
     public BiStreamClient(String host, int port) {
         this.host = host;
         this.port = port;
         // Build Channel and use plaintext
         this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
         // Generate Stub
-        // this.blockingStub = CommunicateGrpc.newBlockingStub(channel);
         this.asynStub = CommunicateGrpc.newStub(channel);
         this.uuid = UUID.randomUUID().toString();
         this.name = null;
         this.lock = new ReentrantLock();
+        this.connect = new AtomicBoolean(true);
+        // test in
+        this.in = new BufferedReader(new InputStreamReader(System.in));
     }
 
-    private void start(String name) throws IOException {
-        // Stdin Input and file input.
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        boolean connect = false;
+    private StreamObserver start(String name, AtomicBoolean connect){
         // Service 1
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
@@ -51,6 +52,7 @@ public class BiStreamClient {
             public void onError(Throwable throwable) {
                 System.out.println(throwable.getMessage());
                 System.out.println("The client will reconnect to the next gRPC server.");
+                connect.set(false);
             }
 
             @Override
@@ -58,29 +60,8 @@ public class BiStreamClient {
                 System.out.println("onCompleted");
             }
         });
-        // Join request.
-        join(requestStreamObserver);
-
-        while(true){
-            try {
-                System.out.println(">");
-                System.out.flush();
-                String line = in.readLine();
-                System.out.println("[ Send msg ]: " + line);
-                // set up time for msg
-                Date d = new Date();
-                SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
-                StreamRequest msgReq = StreamRequest.newBuilder()
-                        .setSource(uuid)
-                        .setName(name)
-                        .setMessage(line)
-                        .setTimestamp(dft.format(d))
-                        .build();
-                requestStreamObserver.onNext(msgReq);
-            } catch(Exception e){
-                e.printStackTrace();
-            }
-        }
+        System.out.println("gRCP:" + Thread.currentThread().toString());
+        return requestStreamObserver;
     }
 
     private void join(StreamObserver requestStreamObserver){
@@ -116,13 +97,110 @@ public class BiStreamClient {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+
+    static class inputLoop implements Runnable{
+
+        private StreamObserver<StreamRequest> observer;
+        private AtomicBoolean connect;
+        private BufferedReader in;
+        String uuid, name;
+        public inputLoop(StreamObserver observer, AtomicBoolean connect, String uuid, String name, BufferedReader in) {
+            this.observer = observer;
+            this.connect = connect;
+            this.uuid = uuid;
+            this.name = name;
+            this.in = in;
+        }
+        public void interrupt(){
+            this.connect.set(false);
+        }
+
+        @Override
+        public void run() {
+            System.out.println(" Sub thread run: " + Thread.currentThread().toString());
+            while(connect.get()){
+                System.out.println(">");
+                System.out.flush();
+                String line = null;
+                try{
+                    line = in.readLine();
+                } catch(IOException e){
+                    e.printStackTrace();
+                }
+                System.out.println("[ Send msg ]: " + line);
+                // set up time for msg
+                Date d = new Date();
+                SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
+                StreamRequest msgReq = StreamRequest.newBuilder()
+                        .setSource(uuid)
+                        .setName(name)
+                        .setMessage(line)
+                        .setTimestamp(dft.format(d))
+                        .build();
+                observer.onNext(msgReq);
+                    /*
+                    if (1 == 2) {
+                        Thread.sleep(1);
+                    } else{
+                        System.out.println("test");
+                    }/*
+                catch(InterruptedException i){
+                    Thread.currentThread().interrupt();
+                }*/
+
+            }
+        }
+    }
+
+    /*
+    BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+        while(true){
+            try {
+                System.out.println(">");
+                System.out.flush();
+                String line = in.readLine();
+                System.out.println("[ Send msg ]: " + line);
+                // set up time for msg
+                Date d = new Date();
+                SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
+                StreamRequest msgReq = StreamRequest.newBuilder()
+                        .setSource(uuid)
+                        .setName(name)
+                        .setMessage(line)
+                        .setTimestamp(dft.format(d))
+                        .build();
+                requestStreamObserver.onNext(msgReq);
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+     */
+    public static void main(String[] args) throws IOException{
         BiStreamClient client = new BiStreamClient(args[0], Integer.parseInt(args[1]));
         System.out.printf("Connect to gRPC server: %s:%s \n", args[0], Integer.parseInt(args[1]));
         String nameStr = client.setName();
-        while (true) {
-            client.start(nameStr);
+        while (client.connect.get()) {
+            // Start.
+            StreamObserver observer = client.start(nameStr, client.connect);
+            // The client sends Join request to the server.
+            client.join(observer);
+            client.connect.set(true);
             System.out.println(123);
+            inputLoop subthread = new inputLoop(observer, client.connect, client.uuid, client.name, client.in);
+            Thread thread = new Thread(subthread);
+            thread.start();
+            System.out.println("while of main");
+            System.out.println(Thread.currentThread().toString());
+            while(true){
+                try{
+                    Thread.sleep(1000);
+                }catch (InterruptedException e){
+                    e.printStackTrace();
+                }
+                if (!client.connect.get()){
+                    break;
+                }
+            }
         }
     }
 }
