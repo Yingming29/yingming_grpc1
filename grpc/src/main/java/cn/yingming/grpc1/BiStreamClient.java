@@ -40,35 +40,17 @@ public class BiStreamClient {
     private void start(String name) throws IOException {
         // Stdin Input and file input.
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        BufferedReader signal = new BufferedReader(new FileReader("grpc/txt/"+ name + "-signal.txt"));
-        BufferedWriter writer = new BufferedWriter(new FileWriter("grpc/txt/"+ name + "-signal.txt"));
+        boolean connect = false;
         // Service 1
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
             public void onNext(StreamResponse streamResponse) {
                 System.out.println(streamResponse.getTimestamp() + " [" + streamResponse.getName() + "]: " + streamResponse.getMessage());
-                /*
-                try {
-                    writeState(writer, "WORKING");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                 */
             }
             @Override
             public void onError(Throwable throwable) {
                 System.out.println(throwable.getMessage());
-
                 System.out.println("The client will reconnect to the next gRPC server.");
-                /*
-                try {
-                    writeState(writer, "RECONNECT");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                 */
             }
 
             @Override
@@ -84,25 +66,6 @@ public class BiStreamClient {
                 System.out.println(">");
                 System.out.flush();
                 String line = in.readLine();
-                /*
-                String line2 = signal.readLine();
-                if(line2.equals("RECONNECT")){
-                    break;
-                } else if (line2.equals("WORKING")){
-                    System.out.println("[ Send msg ]: " + line);
-                    // set up time for msg
-                    Date d = new Date();
-                    SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
-                    StreamRequest msgReq = StreamRequest.newBuilder()
-                            .setSource(uuid)
-                            .setName(name)
-                            .setMessage(line)
-                            .setTimestamp(dft.format(d))
-                            .build();
-                    requestStreamObserver.onNext(msgReq);
-                }
-
-                 */
                 System.out.println("[ Send msg ]: " + line);
                 // set up time for msg
                 Date d = new Date();
@@ -117,17 +80,6 @@ public class BiStreamClient {
             } catch(Exception e){
                 e.printStackTrace();
             }
-        }
-
-    }
-    private void writeState(BufferedWriter writer, String state) throws IOException {
-        lock.lock();
-        try{
-            writer.write(state);
-            writer.write("\n");
-            writer.newLine();
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -168,8 +120,9 @@ public class BiStreamClient {
         BiStreamClient client = new BiStreamClient(args[0], Integer.parseInt(args[1]));
         System.out.printf("Connect to gRPC server: %s:%s \n", args[0], Integer.parseInt(args[1]));
         String nameStr = client.setName();
-        // Utils.createTxtFile(nameStr);
-        client.start(nameStr);
-        System.out.println(123);
+        while (true) {
+            client.start(nameStr);
+            System.out.println(123);
+        }
     }
 }
