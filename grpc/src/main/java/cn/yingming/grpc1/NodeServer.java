@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-// The design v3.0.
+// The design v3.0
 
 public class NodeServer {
 

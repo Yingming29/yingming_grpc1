@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
-//
+// gRPC client
 public class BiStreamClient {
     private ManagedChannel channel;
     // not used because they just have Bi-directional Mode. Just need asynStub
