@@ -2,12 +2,14 @@ package cn.yingming.grpc1;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.bistream.*;
+import io.grpc.bistream.CommunicateGrpc;
+import io.grpc.bistream.StreamRequest;
+import io.grpc.bistream.StreamResponse;
 import io.grpc.stub.StreamObserver;
 
-import java.io.*;
-
-import java.nio.Buffer;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
@@ -15,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 // gRPC client
-public class BiStreamClient {
+public class BiStreamClient2 {
     private ManagedChannel channel;
     // not used because they just have Bi-directional Mode. Just need asynStub
     // private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
@@ -27,7 +29,7 @@ public class BiStreamClient {
     private final ReentrantLock lock;
     private AtomicBoolean connect;
     BufferedReader in;
-    public BiStreamClient(String host, int port) {
+    public BiStreamClient2(String host, int port) {
         this.host = host;
         this.port = port;
         // Build Channel and use plaintext
@@ -37,9 +39,12 @@ public class BiStreamClient {
         this.uuid = UUID.randomUUID().toString();
         this.name = null;
         this.lock = new ReentrantLock();
+        this.connect = new AtomicBoolean(true);
+        // test in
+        this.in = new BufferedReader(new InputStreamReader(System.in));
     }
 
-    private void start(String name){
+    private StreamObserver start(String name, AtomicBoolean connect){
         // Service 1
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
@@ -59,29 +64,7 @@ public class BiStreamClient {
             }
         });
         System.out.println("gRCP:" + Thread.currentThread().toString());
-        join(requestStreamObserver);
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        while(true){
-            try {
-                System.out.println(">");
-                System.out.flush();
-                String line = in.readLine();
-                System.out.println("[ Send msg ]: " + line);
-                // set up time for msg
-                Date d = new Date();
-                SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
-                StreamRequest msgReq = StreamRequest.newBuilder()
-                        .setSource(uuid)
-                        .setName(name)
-                        .setMessage(line)
-                        .setTimestamp(dft.format(d))
-                        .build();
-                requestStreamObserver.onNext(msgReq);
-            } catch(Exception e){
-                e.printStackTrace();
-            }
-        }
+        return requestStreamObserver;
     }
 
     private void join(StreamObserver requestStreamObserver){
@@ -104,7 +87,6 @@ public class BiStreamClient {
         String line = in.readLine().trim();
         this.name = line;
         return line;
-
     }
 
     private void reconnect(){
@@ -196,9 +178,31 @@ public class BiStreamClient {
         }
      */
     public static void main(String[] args) throws IOException{
-        BiStreamClient client = new BiStreamClient(args[0], Integer.parseInt(args[1]));
+        BiStreamClient2 client = new BiStreamClient2(args[0], Integer.parseInt(args[1]));
         System.out.printf("Connect to gRPC server: %s:%s \n", args[0], Integer.parseInt(args[1]));
         String nameStr = client.setName();
-        client.start(nameStr);
+        while (client.connect.get()) {
+            // Start.
+            StreamObserver observer = client.start(nameStr, client.connect);
+            // The client sends Join request to the server.
+            client.join(observer);
+            client.connect.set(true);
+            System.out.println(123);
+            inputLoop subthread = new inputLoop(observer, client.connect, client.uuid, client.name, client.in);
+            Thread thread = new Thread(subthread);
+            thread.start();
+            System.out.println("while of main");
+            System.out.println(Thread.currentThread().toString());
+            while(true){
+                try{
+                    Thread.sleep(1000);
+                }catch (InterruptedException e){
+                    e.printStackTrace();
+                }
+                if (!client.connect.get()){
+                    break;
+                }
+            }
+        }
     }
 }
