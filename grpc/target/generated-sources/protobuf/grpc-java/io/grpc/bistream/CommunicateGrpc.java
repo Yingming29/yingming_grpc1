@@ -48,29 +48,29 @@ public final class CommunicateGrpc {
     return getCreateConnectionMethod;
   }
 
-  private static volatile io.grpc.MethodDescriptor<io.grpc.bistream.StreamReqAsk,
-      io.grpc.bistream.StreamRepAsk> getAskMethod;
+  private static volatile io.grpc.MethodDescriptor<io.grpc.bistream.ReqAsk,
+      io.grpc.bistream.RepAsk> getAskMethod;
 
   @io.grpc.stub.annotations.RpcMethod(
       fullMethodName = SERVICE_NAME + '/' + "ask",
-      requestType = io.grpc.bistream.StreamReqAsk.class,
-      responseType = io.grpc.bistream.StreamRepAsk.class,
-      methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
-  public static io.grpc.MethodDescriptor<io.grpc.bistream.StreamReqAsk,
-      io.grpc.bistream.StreamRepAsk> getAskMethod() {
-    io.grpc.MethodDescriptor<io.grpc.bistream.StreamReqAsk, io.grpc.bistream.StreamRepAsk> getAskMethod;
+      requestType = io.grpc.bistream.ReqAsk.class,
+      responseType = io.grpc.bistream.RepAsk.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
+  public static io.grpc.MethodDescriptor<io.grpc.bistream.ReqAsk,
+      io.grpc.bistream.RepAsk> getAskMethod() {
+    io.grpc.MethodDescriptor<io.grpc.bistream.ReqAsk, io.grpc.bistream.RepAsk> getAskMethod;
     if ((getAskMethod = CommunicateGrpc.getAskMethod) == null) {
       synchronized (CommunicateGrpc.class) {
         if ((getAskMethod = CommunicateGrpc.getAskMethod) == null) {
           CommunicateGrpc.getAskMethod = getAskMethod =
-              io.grpc.MethodDescriptor.<io.grpc.bistream.StreamReqAsk, io.grpc.bistream.StreamRepAsk>newBuilder()
-              .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+              io.grpc.MethodDescriptor.<io.grpc.bistream.ReqAsk, io.grpc.bistream.RepAsk>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
               .setFullMethodName(generateFullMethodName(SERVICE_NAME, "ask"))
               .setSampledToLocalTracing(true)
               .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  io.grpc.bistream.StreamReqAsk.getDefaultInstance()))
+                  io.grpc.bistream.ReqAsk.getDefaultInstance()))
               .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  io.grpc.bistream.StreamRepAsk.getDefaultInstance()))
+                  io.grpc.bistream.RepAsk.getDefaultInstance()))
               .setSchemaDescriptor(new CommunicateMethodDescriptorSupplier("ask"))
               .build();
         }
@@ -139,9 +139,9 @@ public final class CommunicateGrpc {
 
     /**
      */
-    public io.grpc.stub.StreamObserver<io.grpc.bistream.StreamReqAsk> ask(
-        io.grpc.stub.StreamObserver<io.grpc.bistream.StreamRepAsk> responseObserver) {
-      return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(getAskMethod(), responseObserver);
+    public void ask(io.grpc.bistream.ReqAsk request,
+        io.grpc.stub.StreamObserver<io.grpc.bistream.RepAsk> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getAskMethod(), responseObserver);
     }
 
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
@@ -155,10 +155,10 @@ public final class CommunicateGrpc {
                   this, METHODID_CREATE_CONNECTION)))
           .addMethod(
             getAskMethod(),
-            io.grpc.stub.ServerCalls.asyncBidiStreamingCall(
+            io.grpc.stub.ServerCalls.asyncUnaryCall(
               new MethodHandlers<
-                io.grpc.bistream.StreamReqAsk,
-                io.grpc.bistream.StreamRepAsk>(
+                io.grpc.bistream.ReqAsk,
+                io.grpc.bistream.RepAsk>(
                   this, METHODID_ASK)))
           .build();
     }
@@ -191,10 +191,10 @@ public final class CommunicateGrpc {
 
     /**
      */
-    public io.grpc.stub.StreamObserver<io.grpc.bistream.StreamReqAsk> ask(
-        io.grpc.stub.StreamObserver<io.grpc.bistream.StreamRepAsk> responseObserver) {
-      return io.grpc.stub.ClientCalls.asyncBidiStreamingCall(
-          getChannel().newCall(getAskMethod(), getCallOptions()), responseObserver);
+    public void ask(io.grpc.bistream.ReqAsk request,
+        io.grpc.stub.StreamObserver<io.grpc.bistream.RepAsk> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
+          getChannel().newCall(getAskMethod(), getCallOptions()), request, responseObserver);
     }
   }
 
@@ -214,6 +214,13 @@ public final class CommunicateGrpc {
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       return new CommunicateBlockingStub(channel, callOptions);
     }
+
+    /**
+     */
+    public io.grpc.bistream.RepAsk ask(io.grpc.bistream.ReqAsk request) {
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
+          getChannel(), getAskMethod(), getCallOptions(), request);
+    }
   }
 
   /**
@@ -232,10 +239,18 @@ public final class CommunicateGrpc {
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       return new CommunicateFutureStub(channel, callOptions);
     }
+
+    /**
+     */
+    public com.google.common.util.concurrent.ListenableFuture<io.grpc.bistream.RepAsk> ask(
+        io.grpc.bistream.ReqAsk request) {
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
+          getChannel().newCall(getAskMethod(), getCallOptions()), request);
+    }
   }
 
-  private static final int METHODID_CREATE_CONNECTION = 0;
-  private static final int METHODID_ASK = 1;
+  private static final int METHODID_ASK = 0;
+  private static final int METHODID_CREATE_CONNECTION = 1;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -254,6 +269,10 @@ public final class CommunicateGrpc {
     @java.lang.SuppressWarnings("unchecked")
     public void invoke(Req request, io.grpc.stub.StreamObserver<Resp> responseObserver) {
       switch (methodId) {
+        case METHODID_ASK:
+          serviceImpl.ask((io.grpc.bistream.ReqAsk) request,
+              (io.grpc.stub.StreamObserver<io.grpc.bistream.RepAsk>) responseObserver);
+          break;
         default:
           throw new AssertionError();
       }
@@ -267,9 +286,6 @@ public final class CommunicateGrpc {
         case METHODID_CREATE_CONNECTION:
           return (io.grpc.stub.StreamObserver<Req>) serviceImpl.createConnection(
               (io.grpc.stub.StreamObserver<io.grpc.bistream.StreamResponse>) responseObserver);
-        case METHODID_ASK:
-          return (io.grpc.stub.StreamObserver<Req>) serviceImpl.ask(
-              (io.grpc.stub.StreamObserver<io.grpc.bistream.StreamRepAsk>) responseObserver);
         default:
           throw new AssertionError();
       }

@@ -43,9 +43,6 @@ public class BiStreamClient3 {
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
             public void onNext(StreamResponse streamResponse) {
-                // System.out.println("1:" + Thread.currentThread().toString());
-                // System.out.println(channel.isShutdown());
-                // System.out.println(channel.isTerminated());
                 System.out.println(channel.getState(false));
                 System.out.println(streamResponse.getTimestamp() + " [" + streamResponse.getName() + "]: " + streamResponse.getMessage());
             }
@@ -53,10 +50,6 @@ public class BiStreamClient3 {
             @Override
             public void onError(Throwable throwable) {
                 System.out.println(throwable.getMessage());
-                channel.shutdown();
-
-                // System.out.println(channel.isShutdown());
-                // System.out.println(channel.isTerminated());
             }
 
             @Override
@@ -89,9 +82,6 @@ public class BiStreamClient3 {
                 System.out.println(channel.getState(false));
                 requestStreamObserver.onNext(msgReq);
                 System.out.println("3:" + Thread.currentThread().toString());
-
-                // System.out.println(channel.isShutdown());
-                // System.out.println(channel.isTerminated());
             }
             catch(Exception e){
                 e.printStackTrace();

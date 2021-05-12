@@ -12,18 +12,18 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 //
 public class BiStreamClient4 {
     private ManagedChannel channel;
-    // not used because they just have Bi-directional Mode. Just need asynStub
-    // private final CommunicateGrpc.CommunicateBlockingStub blockingStub;
+    private CommunicateGrpc.CommunicateBlockingStub blockingStub;
     private CommunicateGrpc.CommunicateStub asynStub;
-    private String host;
-    private int port;
+    private String address;
     private String uuid;
     private String name;
     private ArrayList serverList;
@@ -32,40 +32,35 @@ public class BiStreamClient4 {
     private AtomicBoolean isWork;
     private ArrayList msgList;
 
-    public BiStreamClient4(String host, int port) {
-        this.host = host;
-        this.port = port;
+    public BiStreamClient4(String address) {
+        this.address = address;
         this.name = null;
         this.uuid = UUID.randomUUID().toString();
         // gRPC Channel and stub
-        this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-        this.asynStub = CommunicateGrpc.newStub(channel);
+        this.channel = ManagedChannelBuilder.forTarget(address).usePlaintext().build();
+        this.asynStub = CommunicateGrpc.newStub(this.channel);
+        this.blockingStub = CommunicateGrpc.newBlockingStub(this.channel);
         this.mainLock = new ReentrantLock();
         // shared part
         this.isWork = new AtomicBoolean(true);
         this.msgList = new ArrayList();
-        this.serverList = new ArrayList<Integer>();
-        // for test
-        this.serverList.add(50051);
-        this.serverList.add(50052);
-        // this.serverList.add(50053);
+        this.serverList = new ArrayList();
     }
 
-    private StreamObserver startGrpc(String name, AtomicBoolean isWork){
+    private StreamObserver startGrpc(AtomicBoolean isWork){
         // Service 1
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
             public void onNext(StreamResponse streamResponse) {
-                System.out.println("In gRPC:" + Thread.currentThread().toString());
-                // System.out.println(channel.getState(false));
-                System.out.println(streamResponse.getTimestamp() + " [" + streamResponse.getName() + "]: " + streamResponse.getMessage());
+                System.out.println("[gRPC]:" + streamResponse.getTimestamp() + " [" + streamResponse.getName() + "]: " + streamResponse.getMessage());
             }
 
             @Override
             public void onError(Throwable throwable) {
                 System.out.println(throwable.getMessage());
-                System.out.println("onError() of gRPC connection, need to reconnect to the next server.");
+                System.out.println("[gRPC]: onError() of gRPC connection, need to reconnect to the next server.");
                 ReentrantLock lock = new ReentrantLock();
+                // change the state of the bi-directional streaming.
                 lock.lock();
                 try{
                     isWork.set(false);
@@ -78,11 +73,33 @@ public class BiStreamClient4 {
 
             @Override
             public void onCompleted() {
-                System.out.println("onCompleted");
+                System.out.println("[gRPC-thread]: onCompleted of the current channel.");
             }
         });
         return requestStreamObserver;
     }
+
+    private void tryOneConnect(CommunicateGrpc.CommunicateBlockingStub blockingStub, String uuid, AtomicBoolean isWork){
+        ReqAsk req = ReqAsk.newBuilder().setSource(uuid).build();
+        try {
+            RepAsk rep = blockingStub.withDeadlineAfter(5000, TimeUnit.MILLISECONDS).ask(req);
+            if (rep.getSurvival()){
+                ReentrantLock lock = new ReentrantLock();
+                lock.lock();
+                try {
+                    isWork.set(true);
+                } finally {
+                    lock.unlock();
+                }
+            } else{
+                System.out.println("[Reconnection]: One server refuses, next server.");
+            }
+        } catch (Exception e){
+            System.out.println("[Reconnection]: The next server is also not available.");
+            e.printStackTrace();
+        }
+    }
+
     private void join(StreamObserver requestStreamObserver){
         // Join
         StreamRequest joinReq = StreamRequest.newBuilder()
@@ -90,7 +107,7 @@ public class BiStreamClient4 {
                 .setSource(uuid)
                 .setName(name)
                 .build();
-        System.out.println("Send join request:" + joinReq.toString());
+        System.out.println("[gRPC]:Send join request:" + joinReq.toString());
         requestStreamObserver.onNext(joinReq);
     }
 
@@ -128,8 +145,7 @@ public class BiStreamClient4 {
                     System.out.println(">");
                     System.out.flush();
                     String line = in.readLine();
-                    System.out.println("[ Send msg ]: " + line);
-                    System.out.println("Input thread:" + Thread.currentThread().toString());
+                    isQuit(line);
                     // set up time for msg, and build message
                     Date d = new Date();
                     SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
@@ -152,50 +168,63 @@ public class BiStreamClient4 {
                     } else{
                         System.out.println("The connection does not work. Please wait.");
                     }
-                    System.out.println("Input thread Loop.");
                 } catch(Exception e){
                     e.printStackTrace();
                 }
             }
         }
-    }
 
-    private boolean reconnect() {
-
-        for (int i = 0; i < this.serverList.size(); i++) {
-            int next = (int) this.serverList.get(i);
-            int now = this.port;
-            System.out.println(next + " " + now);
-            if (next != now){
-                this.channel = ManagedChannelBuilder.forAddress(this.host, next).usePlaintext().build();
-                this.asynStub = CommunicateGrpc.newStub(this.channel);
-                try{
-                    Thread.sleep(5000);
-                } catch (InterruptedException e){
-                    e.printStackTrace();
-                }
-                String state = this.channel.getState(false).toString();
-                System.out.println(state);
-                if (state.equals("READY") || state.equals("IDLE")){
-                    System.out.println("Reconnect successfully. " + host + ":" + port);
-                    this.isWork.set(true);
-                    return true;
-                }
-            } else{
-                System.out.println("The current server is not available." +this.host + ":" + this.port);
+        private void isQuit(String line){
+            if(line.equals("quit")){
+                System.exit(0);
             }
         }
-        System.out.println("All server are not available.");
+    }
+
+    // reconnect
+    private boolean reconnect() {
+        int count = 0;
+        while(true){
+            count++;
+            Random r = new Random();
+            int randomSelect = r.nextInt(this.serverList.size());
+            String newAdd = (String) this.serverList.get(randomSelect);
+            System.out.println("[Reconnection]: Random selected server for reconnection:" + newAdd);
+            // try to build new channel and generate new stubs for new server
+            this.channel = ManagedChannelBuilder.forTarget(newAdd).usePlaintext().build();
+            this.asynStub = CommunicateGrpc.newStub(this.channel);
+            this.blockingStub = CommunicateGrpc.newBlockingStub(this.channel);
+            // send a unary request for test
+            tryOneConnect(this.blockingStub, this.uuid, this.isWork);
+            // using isWork to judge
+            if (this.isWork.get()){
+                this.address = newAdd;
+                System.out.println("[Reconnection]: Reconnect successfully to server-" + this.address);
+                return true;
+            }
+            if (count > 10){
+                break;
+            }
+        }
+        System.out.println("[Reconnection]: Reconnect many times, end the reconnection loop.");
         return false;
     }
 
-    public static void main(String[] args) throws IOException {
-        BiStreamClient4 client = new BiStreamClient4(args[0], Integer.parseInt(args[1]));
-        System.out.printf("Connect to gRPC server: %s:%s \n", args[0], Integer.parseInt(args[1]));
-        ArrayList serverList = new ArrayList();
+    private void addToServerList(int size){
+        String ip = "127.0.0.1:";
+        int port = 50050;
+        for (int i = 0; i < size; i++) {
+            port++;
+            this.serverList.add(ip + "" + port);
+        }
+    }
 
-        // 1.Set the name of the client.
-        String nameStr = client.setName();
+    public static void main(String[] args) throws IOException {
+        BiStreamClient4 client = new BiStreamClient4(args[0]);
+        System.out.printf("Start: Connect to gRPC server: %s \n", args[0]);
+        // 1.Set the name of the client and add servers' address to that server list
+        client.setName();
+        client.addToServerList(Integer.parseInt(args[1]));
         // 2.Create inputLoop Thread.
         inputLoop inputThread = new inputLoop(client.uuid, client.name, client.msgList, client.isWork);
         Thread thread1 = new Thread(inputThread);
@@ -203,11 +232,12 @@ public class BiStreamClient4 {
         // 3. while loop for a client and reconnect.
         while(true){
             // 3.1 start gRPC client and send join request.
-            System.out.println("3.1");
-            StreamObserver requestSender = client.startGrpc(nameStr, client.isWork);
+            StreamObserver requestSender = client.startGrpc(client.isWork);
             client.join(requestSender);
             // 3.2 check loop for connection problem and input content, and send request.
             while(true){
+                // the if statement is for inputLoop thread and state of bidirectional streaming.
+                // If the channel
                 if (client.msgList.size()!=0 && client.isWork.get()){
                     client.mainLock.lock();
                     try{
@@ -227,7 +257,6 @@ public class BiStreamClient4 {
                 break;
             }
         }
-
         // 4. End all threads.
         System.exit(0);
     }

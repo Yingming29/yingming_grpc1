@@ -25,15 +25,15 @@ public final class Bistream {
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_cn_yingming_grpc1_StreamResponse_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_cn_yingming_grpc1_StreamReqAsk_descriptor;
+    internal_static_cn_yingming_grpc1_ReqAsk_descriptor;
   static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_cn_yingming_grpc1_StreamReqAsk_fieldAccessorTable;
+      internal_static_cn_yingming_grpc1_ReqAsk_fieldAccessorTable;
   static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_cn_yingming_grpc1_StreamRepAsk_descriptor;
+    internal_static_cn_yingming_grpc1_RepAsk_descriptor;
   static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_cn_yingming_grpc1_StreamRepAsk_fieldAccessorTable;
+      internal_static_cn_yingming_grpc1_RepAsk_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -48,14 +48,13 @@ public final class Bistream {
       "(\t\022\014\n\004join\030\003 \001(\010\022\017\n\007message\030\004 \001(\t\022\021\n\ttim" +
       "estamp\030\005 \001(\t\"B\n\016StreamResponse\022\014\n\004name\030\001" +
       " \001(\t\022\017\n\007message\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\t" +
-      "\"\036\n\014StreamReqAsk\022\016\n\006source\030\001 \001(\t\" \n\014Stre" +
-      "amRepAsk\022\020\n\010survival\030\001 \001(\0102\273\001\n\013Communica" +
-      "te\022]\n\020createConnection\022 .cn.yingming.grp" +
-      "c1.StreamRequest\032!.cn.yingming.grpc1.Str" +
-      "eamResponse\"\000(\0010\001\022M\n\003ask\022\037.cn.yingming.g" +
-      "rpc1.StreamReqAsk\032\037.cn.yingming.grpc1.St" +
-      "reamRepAsk\"\000(\0010\001B)\n\020io.grpc.bistreamB\010Bi" +
-      "streamP\001\242\002\010YINGMINGb\006proto3"
+      "\"\030\n\006ReqAsk\022\016\n\006source\030\001 \001(\t\"\032\n\006RepAsk\022\020\n\010" +
+      "survival\030\001 \001(\0102\253\001\n\013Communicate\022]\n\020create" +
+      "Connection\022 .cn.yingming.grpc1.StreamReq" +
+      "uest\032!.cn.yingming.grpc1.StreamResponse\"" +
+      "\000(\0010\001\022=\n\003ask\022\031.cn.yingming.grpc1.ReqAsk\032" +
+      "\031.cn.yingming.grpc1.RepAsk\"\000B)\n\020io.grpc." +
+      "bistreamB\010BistreamP\001\242\002\010YINGMINGb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -73,17 +72,17 @@ public final class Bistream {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_cn_yingming_grpc1_StreamResponse_descriptor,
         new java.lang.String[] { "Name", "Message", "Timestamp", });
-    internal_static_cn_yingming_grpc1_StreamReqAsk_descriptor =
+    internal_static_cn_yingming_grpc1_ReqAsk_descriptor =
       getDescriptor().getMessageTypes().get(2);
-    internal_static_cn_yingming_grpc1_StreamReqAsk_fieldAccessorTable = new
+    internal_static_cn_yingming_grpc1_ReqAsk_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_cn_yingming_grpc1_StreamReqAsk_descriptor,
+        internal_static_cn_yingming_grpc1_ReqAsk_descriptor,
         new java.lang.String[] { "Source", });
-    internal_static_cn_yingming_grpc1_StreamRepAsk_descriptor =
+    internal_static_cn_yingming_grpc1_RepAsk_descriptor =
       getDescriptor().getMessageTypes().get(3);
-    internal_static_cn_yingming_grpc1_StreamRepAsk_fieldAccessorTable = new
+    internal_static_cn_yingming_grpc1_RepAsk_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_cn_yingming_grpc1_StreamRepAsk_descriptor,
+        internal_static_cn_yingming_grpc1_RepAsk_descriptor,
         new java.lang.String[] { "Survival", });
   }
 

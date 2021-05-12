@@ -2,6 +2,7 @@ package cn.yingming.grpc1;
 
 import io.grpc.*;
 import io.grpc.bistream.*;
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.jgroups.Message;
 import org.jgroups.ObjectMessage;
@@ -43,12 +44,15 @@ public class NodeServer {
                 .addService(this.gRPCservice)
                 .intercept(new ClientAddInterceptor())
                 .build();
+
     }
 
     // Start gRPC server
     private void start() throws Exception {
         this.server.start();
         System.out.println("---Server Starts.---");
+        // Give the entry of gRPC for calling broadcast().
+        this.giveEntry(this.gRPCservice);
         // The method will run before closing the server.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -127,6 +131,13 @@ public class NodeServer {
             };
         }
 
+        public void ask(ReqAsk req, StreamObserver<RepAsk> responseObserver){
+            System.out.println("Receive an ask request for reconnection from " + req.getSource());
+            RepAsk askMsg = RepAsk.newBuilder().setSurvival(true).build();
+            responseObserver.onNext(askMsg);
+            responseObserver.onCompleted();
+        }
+
         protected void join(StreamRequest req, StreamObserver<StreamResponse> responseObserver){
             // 1. get lock
             lock.lock();
@@ -150,7 +161,7 @@ public class NodeServer {
             }
         }
 
-        // Broadcast messages.
+        // Broadcast messages from its clients.
         protected void broadcast(StreamRequest req){
 
             // set the message which is broadcast to all clients.
@@ -162,16 +173,15 @@ public class NodeServer {
                     .setMessage(msg)
                     .setTimestamp(timeStr)
                     .build();
-            // Iteration of StreamObserver for broadcast message.
+            // Iteration of StreamObserver for check and broadcast message.
             for (String u : clients.keySet()){
                 clients.get(u).onNext(broMsg);
-                //
             }
             System.out.println("One broadcast for message.");
             System.out.println(broMsg.toString());
 
         }
-
+        // Broadcast the message from other nodes.
         protected void broadcast(String message){
             // set the message (from other nodes) which is broadcast to all clients.
             String[] msg = message.split("\t");
@@ -183,7 +193,7 @@ public class NodeServer {
             // Iteration of StreamObserver for broadcast message.
             for (String u : clients.keySet()){
                 clients.get(u).onNext(broMsg);
-                //
+
             }
             System.out.println("One broadcast for message from other nodes.");
             System.out.println(broMsg.toString());
@@ -199,14 +209,22 @@ public class NodeServer {
                 e.printStackTrace();
             }
         }
+        /*
+        protected boolean checkClientState(StreamObserver<StreamResponse> resObserver){
+            StreamObserver<>
+            ServerCallStreamObserver<StreamResponse> observer = ((ServerCallStreamObserver<StreamResponse>) resObserver);
+            if (resObserver.)
+            return false;
+        }
 
+         */
     }
     // Get ip address of client when receive the join request.
     private class ClientAddInterceptor implements ServerInterceptor {
         @Override
         public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
             String ip = call.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR).toString();
-            System.out.println("Joined Client IP address: " + ip);
+            System.out.println("Found request from IP address: " + ip);
             ips.put(ips.size(), ip);
             return next.startCall(call, headers);
         }
@@ -218,7 +236,6 @@ public class NodeServer {
         System.out.printf("Inf: %s %s %s \n",args[0], args[1], args[2]);
         // start gRPC service
         server.start();
-        server.giveEntry(server.gRPCservice);
         server.blockUntilShutdown();
     }
 

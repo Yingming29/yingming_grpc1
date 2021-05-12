@@ -9,7 +9,7 @@ package cn.yingming.grpc1;
 service Communicate {
   rpc createConnection(stream StreamRequest) returns (stream StreamResponse) {
   }
-  rpc ask(stream StreamReqAsk) returns (stream StreamRepAsk) {
+  rpc ask(ReqAsk) returns (RepAsk) {
   }
 
 }
@@ -29,9 +29,9 @@ message StreamResponse {
 }
 
 //
-message StreamReqAsk {
+message ReqAsk {
   string source = 1;
 }
-message StreamRepAsk{
+message RepAsk{
   bool survival = 1;
 }
