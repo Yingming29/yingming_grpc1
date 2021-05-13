@@ -125,7 +125,7 @@ public class BiStreamClient {
     }
 
     // Thread for stdin input loop.
-    static class inputLoop implements Runnable {
+    class inputLoop implements Runnable {
         ReentrantLock inputLock;
         ArrayList sharedList;
         AtomicBoolean isWork;
