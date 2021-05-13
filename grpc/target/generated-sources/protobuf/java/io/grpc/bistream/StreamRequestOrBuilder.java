@@ -68,4 +68,10 @@ public interface StreamRequestOrBuilder extends
    */
   com.google.protobuf.ByteString
       getTimestampBytes();
+
+  /**
+   * <code>bool quit = 6;</code>
+   * @return The quit.
+   */
+  boolean getQuit();
 }

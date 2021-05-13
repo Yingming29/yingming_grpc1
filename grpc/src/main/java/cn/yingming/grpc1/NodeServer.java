@@ -12,11 +12,9 @@ import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-// The design v3.0
-
+// The node is given with a gRPC server and a JChannel.
 public class NodeServer {
-
-    // 1. Port and gRPC server of node
+    // 1. Port and server object of grpc server
     private int port;
     private Server server;
     // 2. Node name, cluster name, JChannel of node
@@ -24,7 +22,6 @@ public class NodeServer {
     String jClusterName;
     NodeJChannel jchannel;
     // 3.shared part.
-    ArrayList<String> msgList;
     CommunicateImpl gRPCservice;
     // <no, ip>, it stores all ip address for clients, who are connecting to this server. not useful.
     private ConcurrentHashMap<Integer, String> ips;
@@ -36,10 +33,9 @@ public class NodeServer {
         // not useful, store clients address.
         this.ips = new ConcurrentHashMap<>();
         // shared
-        this.msgList = new ArrayList<>();
-        // create JChannel with node name and cluster name
+        // create JChannel given node name and cluster name
         this.jchannel = new NodeJChannel(nodeName, jClusterName);
-        // create grpc service given the jchannel for calling send() method on jchannel.
+        // create grpc server, and its service is given the jchannel for calling send() method on jchannel.
         this.gRPCservice = new CommunicateImpl(this.jchannel);
         this.server = ServerBuilder.forPort(port)
                 .addService(this.gRPCservice)
@@ -98,13 +94,27 @@ public class NodeServer {
             return new StreamObserver<StreamRequest>() {
                 @Override
                 public void onNext(StreamRequest streamRequest) {
-                    if (streamRequest.getJoin()){ // true
+                    if (streamRequest.getJoin()){ // true, get join request
                         System.out.println(streamRequest.getName() + "(" +
                                 streamRequest.getSource() + ") joins the chat.");
                         // Treat the responseObserver of joining client.
                         join(streamRequest, responseObserver);
-                    }
-                    else{
+                    } else if (streamRequest.getQuit()){
+                        System.out.println("The client sends a quit request. (" + streamRequest.getName() + "(" +
+                                        streamRequest.getSource() + ")");
+                        // quit request.
+                        lock.lock();
+                        try {
+                            for (String uuid : clients.keySet()) {
+                                if (uuid.equals(streamRequest.getSource())){
+                                    clients.remove(uuid);
+                                }
+                            }
+                        } finally {
+                            lock.unlock();
+                        }
+                    } else{
+                        // common message for broadcast
                         System.out.println("[gRPC] " + streamRequest.getName() + " sends message: " + streamRequest.getMessage()
                                 + " at " + streamRequest.getTimestamp());
                         lock.lock();
@@ -131,7 +141,7 @@ public class NodeServer {
             };
         }
 
-        // the response method for try connection from clients.
+        // the response of ask rpc call method for try connection from clients.
         public void ask(ReqAsk req, StreamObserver<RepAsk> responseObserver){
             System.out.println("Receive an ask request for reconnection from " + req.getSource());
             RepAsk askMsg = RepAsk.newBuilder().setSurvival(true).build();
@@ -142,18 +152,18 @@ public class NodeServer {
         protected void join(StreamRequest req, StreamObserver<StreamResponse> responseObserver){
             // 1. get lock
             lock.lock();
-            // 2. critical section
+            // 2. critical section, for Map<> clients.
             try{
+                // add a new client to Map<uuid, responseObserver>
                 clients.put(req.getSource(), responseObserver);
                 Date d = new Date();
                 SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
                 StreamResponse joinResponse = StreamResponse.newBuilder()
-                        .setName("Server")
+                        .setName(nodeName)
                         .setMessage("You join successfully.")
                         .setTimestamp(dft.format(d))
                         .build();
                 responseObserver.onNext(joinResponse);
-
             }
             // 3. run finally, confirm the lock will be unlock.
             finally {
@@ -164,8 +174,7 @@ public class NodeServer {
 
         // Broadcast messages from its clients.
         protected void broadcast(StreamRequest req){
-
-            // set the message which is broadcast to all clients.
+            ArrayList deleteList = new ArrayList();
             String name = req.getName();
             String msg = req.getMessage();
             String timeStr = req.getTimestamp();
@@ -174,16 +183,31 @@ public class NodeServer {
                     .setMessage(msg)
                     .setTimestamp(timeStr)
                     .build();
-            // Iteration of StreamObserver for check and broadcast message.
             for (String u : clients.keySet()){
-                clients.get(u).onNext(broMsg);
+                try{
+                    clients.get(u).onNext(broMsg);
+                } catch (Exception e){
+                    e.printStackTrace();
+                    deleteList.add(u);
+                    System.out.println("Found a client not working. Delete it.");
+                }
+            }
+            if(deleteList.size() != 0){
+                for (int i = 0; i < deleteList.size(); i++) {
+                    clients.remove(deleteList.get(i));
+                    System.out.println("Delete a client responseObserver from Map.");
+                }
+            } else{
+                System.out.println("All clients are available.");
             }
             System.out.println("One broadcast for message.");
             System.out.println(broMsg.toString());
 
         }
-        // Broadcast the message from other nodes.
+        // Broadcast the messages from other nodes.
         protected void broadcast(String message){
+            //
+            ArrayList deleteList = new ArrayList();
             // set the message (from other nodes) which is broadcast to all clients.
             String[] msg = message.split("\t");
             StreamResponse broMsg = StreamResponse.newBuilder()
@@ -193,16 +217,30 @@ public class NodeServer {
                     .build();
             // Iteration of StreamObserver for broadcast message.
             for (String u : clients.keySet()){
-                clients.get(u).onNext(broMsg);
-
+                try{
+                    clients.get(u).onNext(broMsg);
+                } catch (Exception e){
+                    e.printStackTrace();
+                    deleteList.add(u);
+                    System.out.println("Found a client not working. Delete it.");
+                }
+            }
+            if(deleteList.size() != 0){
+                for (int i = 0; i < deleteList.size(); i++) {
+                    clients.remove(deleteList.get(i));
+                    System.out.println("Delete a client responseObserver from Map.");
+                }
+            } else{
+                System.out.println("All clients are available.");
             }
             System.out.println("One broadcast for message from other nodes.");
             System.out.println(broMsg.toString());
         }
-        // Send the message to other JChannel
+        // Send the message to other JChannels
         protected void forward(StreamRequest req){
             String strMsg = Utils.streamToStrMsg(req);
             Message msg = new ObjectMessage(null, strMsg);
+            // send messages exclude itself.
             msg.setFlagIfAbsent(Message.TransientFlag.DONT_LOOPBACK);
             try {
                 this.jchannel.channel.send(msg);
@@ -230,5 +268,4 @@ public class NodeServer {
         server.start();
         server.blockUntilShutdown();
     }
-
 }

@@ -85,6 +85,11 @@ private static final long serialVersionUID = 0L;
             timestamp_ = s;
             break;
           }
+          case 48: {
+
+            quit_ = input.readBool();
+            break;
+          }
           default: {
             if (!parseUnknownField(
                 input, unknownFields, extensionRegistry, tag)) {
@@ -288,6 +293,17 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int QUIT_FIELD_NUMBER = 6;
+  private boolean quit_;
+  /**
+   * <code>bool quit = 6;</code>
+   * @return The quit.
+   */
+  @java.lang.Override
+  public boolean getQuit() {
+    return quit_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -317,6 +333,9 @@ private static final long serialVersionUID = 0L;
     if (!getTimestampBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 5, timestamp_);
     }
+    if (quit_ != false) {
+      output.writeBool(6, quit_);
+    }
     unknownFields.writeTo(output);
   }
 
@@ -341,6 +360,10 @@ private static final long serialVersionUID = 0L;
     }
     if (!getTimestampBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, timestamp_);
+    }
+    if (quit_ != false) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeBoolSize(6, quit_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -367,6 +390,8 @@ private static final long serialVersionUID = 0L;
         .equals(other.getMessage())) return false;
     if (!getTimestamp()
         .equals(other.getTimestamp())) return false;
+    if (getQuit()
+        != other.getQuit()) return false;
     if (!unknownFields.equals(other.unknownFields)) return false;
     return true;
   }
@@ -389,6 +414,9 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getMessage().hashCode();
     hash = (37 * hash) + TIMESTAMP_FIELD_NUMBER;
     hash = (53 * hash) + getTimestamp().hashCode();
+    hash = (37 * hash) + QUIT_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+        getQuit());
     hash = (29 * hash) + unknownFields.hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -536,6 +564,8 @@ private static final long serialVersionUID = 0L;
 
       timestamp_ = "";
 
+      quit_ = false;
+
       return this;
     }
 
@@ -567,6 +597,7 @@ private static final long serialVersionUID = 0L;
       result.join_ = join_;
       result.message_ = message_;
       result.timestamp_ = timestamp_;
+      result.quit_ = quit_;
       onBuilt();
       return result;
     }
@@ -633,6 +664,9 @@ private static final long serialVersionUID = 0L;
       if (!other.getTimestamp().isEmpty()) {
         timestamp_ = other.timestamp_;
         onChanged();
+      }
+      if (other.getQuit() != false) {
+        setQuit(other.getQuit());
       }
       this.mergeUnknownFields(other.unknownFields);
       onChanged();
@@ -1014,6 +1048,37 @@ private static final long serialVersionUID = 0L;
   checkByteStringIsUtf8(value);
       
       timestamp_ = value;
+      onChanged();
+      return this;
+    }
+
+    private boolean quit_ ;
+    /**
+     * <code>bool quit = 6;</code>
+     * @return The quit.
+     */
+    @java.lang.Override
+    public boolean getQuit() {
+      return quit_;
+    }
+    /**
+     * <code>bool quit = 6;</code>
+     * @param value The quit to set.
+     * @return This builder for chaining.
+     */
+    public Builder setQuit(boolean value) {
+      
+      quit_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>bool quit = 6;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearQuit() {
+      
+      quit_ = false;
       onChanged();
       return this;
     }
