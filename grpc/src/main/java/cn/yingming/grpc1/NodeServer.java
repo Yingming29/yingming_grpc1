@@ -2,7 +2,6 @@ package cn.yingming.grpc1;
 
 import io.grpc.*;
 import io.grpc.bistream.*;
-import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.jgroups.Message;
 import org.jgroups.ObjectMessage;
@@ -25,7 +24,7 @@ public class NodeServer {
     String jClusterName;
     NodeJChannel jchannel;
     // 3.shared part.
-    ArrayList<String> msgList; // ? can be removed
+    ArrayList<String> msgList;
     CommunicateImpl gRPCservice;
     // <no, ip>, it stores all ip address for clients, who are connecting to this server. not useful.
     private ConcurrentHashMap<Integer, String> ips;
@@ -38,13 +37,14 @@ public class NodeServer {
         this.ips = new ConcurrentHashMap<>();
         // shared
         this.msgList = new ArrayList<>();
+        // create JChannel with node name and cluster name
         this.jchannel = new NodeJChannel(nodeName, jClusterName);
+        // create grpc service given the jchannel for calling send() method on jchannel.
         this.gRPCservice = new CommunicateImpl(this.jchannel);
         this.server = ServerBuilder.forPort(port)
                 .addService(this.gRPCservice)
                 .intercept(new ClientAddInterceptor())
                 .build();
-
     }
 
     // Start gRPC server
@@ -131,6 +131,7 @@ public class NodeServer {
             };
         }
 
+        // the response method for try connection from clients.
         public void ask(ReqAsk req, StreamObserver<RepAsk> responseObserver){
             System.out.println("Receive an ask request for reconnection from " + req.getSource());
             RepAsk askMsg = RepAsk.newBuilder().setSurvival(true).build();
@@ -209,15 +210,6 @@ public class NodeServer {
                 e.printStackTrace();
             }
         }
-        /*
-        protected boolean checkClientState(StreamObserver<StreamResponse> resObserver){
-            StreamObserver<>
-            ServerCallStreamObserver<StreamResponse> observer = ((ServerCallStreamObserver<StreamResponse>) resObserver);
-            if (resObserver.)
-            return false;
-        }
-
-         */
     }
     // Get ip address of client when receive the join request.
     private class ClientAddInterceptor implements ServerInterceptor {

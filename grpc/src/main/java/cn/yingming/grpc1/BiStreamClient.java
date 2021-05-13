@@ -41,7 +41,7 @@ public class BiStreamClient {
         this.asynStub = CommunicateGrpc.newStub(this.channel);
         this.blockingStub = CommunicateGrpc.newBlockingStub(this.channel);
         this.mainLock = new ReentrantLock();
-        // shared part
+        // shared part, in lock
         this.isWork = new AtomicBoolean(true);
         this.msgList = new ArrayList();
         this.serverList = new ArrayList();
