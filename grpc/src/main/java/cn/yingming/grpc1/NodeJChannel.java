@@ -27,7 +27,7 @@ public class NodeJChannel extends NodeReceiver{
     public void receive(Message msg) {
         String line = msg.getSrc() + ": " + msg.getObject();
         System.out.println("[JChannel] " + line);
-
+        System.out.println(Thread.currentThread().toString());
         this.lock.lock();;
         try{
             this.service.broadcast(msg.getObject().toString());

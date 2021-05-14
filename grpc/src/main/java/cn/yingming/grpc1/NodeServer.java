@@ -14,14 +14,14 @@ import java.util.concurrent.locks.ReentrantLock;
 
 // The node is given with a gRPC server and a JChannel.
 public class NodeServer {
-    // 1. Port and server object of grpc server
+    //  Port and server object of grpc server
     private int port;
     private Server server;
-    // 2. Node name, cluster name, JChannel of node
+    //  Node name, cluster name, JChannel of node
     String nodeName;
     String jClusterName;
     NodeJChannel jchannel;
-    // 3.shared part.
+
     CommunicateImpl gRPCservice;
     // <no, ip>, it stores all ip address for clients, who are connecting to this server. not useful.
     private ConcurrentHashMap<Integer, String> ips;
@@ -43,12 +43,12 @@ public class NodeServer {
                 .build();
     }
 
-    // Start gRPC server
+    // Start grpc
     private void start() throws Exception {
-        this.server.start();
-        System.out.println("---Server Starts.---");
         // Give the entry of gRPC for calling broadcast().
         this.giveEntry(this.gRPCservice);
+        this.server.start();
+        System.out.println("---Server Starts.---");
         // The method will run before closing the server.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
