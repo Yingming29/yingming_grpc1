@@ -82,7 +82,6 @@ public class BiStreamClient {
         ReqAsk req = ReqAsk.newBuilder().setSource(this.uuid).build();
         try {
             RepAsk rep = this.blockingStub.withDeadlineAfter(5000, TimeUnit.MILLISECONDS).ask(req);
-            System.out.println(Thread.currentThread().toString());
             if (rep.getSurvival()) {
                 ReentrantLock lock = new ReentrantLock();
                 lock.lock();
