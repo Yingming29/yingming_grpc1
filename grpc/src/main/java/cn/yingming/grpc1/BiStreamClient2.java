@@ -201,12 +201,23 @@ public class BiStreamClient2 {
                     // set up time for msg, and build message
                     Date d = new Date();
                     SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
-                    StreamRequest msgReq = StreamRequest.newBuilder()
-                            .setSource(this.uuid)
-                            .setName(this.name)
-                            .setMessage(line)
-                            .setTimestamp(dft.format(d))
-                            .build();
+                    StreamRequest msgReq = null;
+                    // set the content of message
+                    if (line.equals("quit")){
+                        msgReq = StreamRequest.newBuilder()
+                                .setSource(this.uuid)
+                                .setName(this.name)
+                                .setTimestamp(dft.format(d))
+                                .setQuit(true)
+                                .build();
+                    } else{
+                        msgReq = StreamRequest.newBuilder()
+                                .setSource(this.uuid)
+                                .setName(this.name)
+                                .setMessage(line)
+                                .setTimestamp(dft.format(d))
+                                .build();
+                    }
                     // Check the isWork, and do action. send msg or print error.
                     if (isWork.get()) {
                         inputLock.lock();
@@ -218,12 +229,15 @@ public class BiStreamClient2 {
                         } finally {
                             inputLock.unlock();
                         }
-                    } else {
+                    } else{
                         System.out.println("The connection does not work. Please wait.");
                     }
+                    // if quit, end the client
                     if (line.equals("quit")){
                         System.exit(0);
                     }
+
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

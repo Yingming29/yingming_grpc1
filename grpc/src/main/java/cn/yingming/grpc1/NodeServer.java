@@ -100,7 +100,7 @@ public class NodeServer {
                         // Treat the responseObserver of joining client.
                         join(streamRequest, responseObserver);
                     } else if (streamRequest.getQuit()){
-                        System.out.println("The client sends a quit request. (" + streamRequest.getName() + "(" +
+                        System.out.println("The client sends a quit request. " + streamRequest.getName() + "(" +
                                         streamRequest.getSource() + ")");
                         // quit request.
                         lock.lock();
