@@ -9,10 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -60,8 +57,23 @@ public class BiStreamClient2 {
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
             public void onNext(StreamResponse streamResponse) {
-                // System.out.println("Current rpc" + Thread.currentThread().toString());
-                System.out.println("[gRPC]:" + streamResponse.getTimestamp() + " [" + streamResponse.getName() + "]: " + streamResponse.getMessage());
+                if (streamResponse.getAddresses()!= ""){
+                    update(streamResponse.getAddresses());
+                } else{
+                    System.out.println("[gRPC]:" + streamResponse.getTimestamp() + " [" + streamResponse.getName() + "]: " + streamResponse.getMessage());
+                }
+            }
+            public void update(String addresses){
+                String[] add = addresses.split(" ");
+                List<String> newList = Arrays.asList(add);
+                lock.lock();
+                try {
+                    serverList.clear();
+                    serverList.addAll(newList);
+                    System.out.println("Update addresses of servers: " + serverList);
+                } finally {
+                    lock.unlock();
+                }
             }
 
             @Override
@@ -113,7 +125,7 @@ public class BiStreamClient2 {
                     break;
                 }
                 // maximum reconnection time is 10
-                if (count > 10) {
+                if (count > 9999) {
                     System.out.println("Over the maximum times of reconnection, end.");
                     System.exit(0);
                 }
@@ -256,10 +268,10 @@ public class BiStreamClient2 {
     }
 
     // main logic
-    private void start(String size) throws IOException {
+    private void start() throws IOException {
         // 1.Set the name of the client and add servers' address to that server list
         this.setName();
-        this.addToServerList(Integer.parseInt(size));
+        // this.addToServerList(Integer.parseInt(size));
         // 2.Create inputLoop Thread.
         inputLoop inputThread = new inputLoop(this.uuid, this.name, this.isWork);
         Thread thread1 = new Thread(inputThread);
@@ -282,6 +294,6 @@ public class BiStreamClient2 {
     public static void main(String[] args) throws IOException {
         BiStreamClient2 client = new BiStreamClient2(args[0]);
         System.out.printf("Start: Connect to gRPC server: %s \n", args[0]);
-        client.start(args[1]);
+        client.start();
     }
 }

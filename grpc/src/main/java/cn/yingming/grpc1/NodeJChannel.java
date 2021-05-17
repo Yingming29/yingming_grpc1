@@ -27,7 +27,7 @@ public class NodeJChannel implements Receiver{
         this.node_name = node_name;
         this.cluster_name = cluster_name;
         this.grpcAddress = grpcAddress;
-        this.nodesMap = new ConcurrentHashMap<String, String>();
+        this.nodesMap = new ConcurrentHashMap<>();
         this.channel.setReceiver(this).connect(cluster_name);
         this.lock = new ReentrantLock();
         this.service = null;
@@ -44,18 +44,32 @@ public class NodeJChannel implements Receiver{
         synchronized (this.nodesMap){
             if (msgStr.startsWith("grpcAddress:")){
                 String[] strs = msgStr.split(":", 2);
-                String source = msg.getSrc().toString();
-                if (this.nodesMap.get(source).equals(strs[1])){
+                boolean same = false;
+                for (Object add : this.nodesMap.keySet()) {
+                    if (add.toString().equals(msg.getSrc().toString())&&this.nodesMap.get(add).equals(strs[1])){
+                        same = true;
+                    }
+                }
+                if (same){
                     System.out.println("Receive a confirmation from a node, but no change.");
                 } else{
-                    this.nodesMap.put(source, strs[1]);
+                    this.nodesMap.put(msg.getSrc(), strs[1]);
                     System.out.println("Receive a confirmation from a node, update map.");
                     System.out.println("After receiving: " + this.nodesMap);
                     String str = generateAddMsg();
                     newMsg = str;
                     this.service.broadcast(newMsg);
-                }
 
+                /*
+                this.nodesMap.put(msg.getSrc(), strs[1]);
+
+                System.out.println("Receive a confirmation from a node, update map.");
+                System.out.println("After receiving: " + this.nodesMap);
+                String str = generateAddMsg();
+                newMsg = str;
+                this.service.broadcast(newMsg);
+                */
+                }
             } else {
                 // Broadcast the common message
                 String line = msg.getSrc() + ": " + msg.getObject();
@@ -114,6 +128,9 @@ public class NodeJChannel implements Receiver{
                     this.nodesMap.remove(compare.get(i));
                 }
                 System.out.println("The current nodes map: " + this.nodesMap);
+                String str = generateAddMsg();
+
+                this.service.broadcast(str);
             } else {
                 System.out.println("No change of node inf.");
             }

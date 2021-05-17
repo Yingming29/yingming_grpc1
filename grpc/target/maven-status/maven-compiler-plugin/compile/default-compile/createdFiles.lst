@@ -8,7 +8,6 @@ cn/yingming/grpc1/NodeJChannel.class
 cn/yingming/grpc1/NodeServer$1.class
 io/grpc/bistream/CommunicateGrpc$CommunicateStub.class
 io/grpc/bistream/CommunicateGrpc$CommunicateFileDescriptorSupplier.class
-io/grpc/bistream/Bistream.class
 io/grpc/bistream/ReqAsk$1.class
 io/grpc/bistream/StreamRequest.class
 io/grpc/bistream/CommunicateGrpc$CommunicateBlockingStub.class
