@@ -21,7 +21,6 @@ public class NodeServer {
     String nodeName;
     String jClusterName;
     NodeJChannel jchannel;
-
     CommunicateImpl gRPCservice;
     // <no, ip>, it stores all ip address for clients, who are connecting to this server. not useful.
     private ConcurrentHashMap<Integer, String> ips;
@@ -32,9 +31,8 @@ public class NodeServer {
         this.jClusterName = jClusterName;
         // not useful, store clients address.
         this.ips = new ConcurrentHashMap<>();
-        // shared
         // create JChannel given node name and cluster name
-        this.jchannel = new NodeJChannel(nodeName, jClusterName);
+        this.jchannel = new NodeJChannel(nodeName, jClusterName, "127.0.0.1:" + port);
         // create grpc server, and its service is given the jchannel for calling send() method on jchannel.
         this.gRPCservice = new CommunicateImpl(this.jchannel);
         this.server = ServerBuilder.forPort(port)
@@ -90,6 +88,7 @@ public class NodeServer {
             this.jchannel = jchannel;
         }
 
+        // service 1, bi-directional streaming rpc
         public StreamObserver<StreamRequest> createConnection(StreamObserver<StreamResponse> responseObserver){
             return new StreamObserver<StreamRequest>() {
                 @Override
@@ -141,14 +140,14 @@ public class NodeServer {
             };
         }
 
-        // the response of ask rpc call method for try connection from clients.
+        /* The unary rpc, the response of ask rpc call method for the try connection from clients.
+         */
         public void ask(ReqAsk req, StreamObserver<RepAsk> responseObserver){
             System.out.println("Receive an ask request for reconnection from " + req.getSource());
             RepAsk askMsg = RepAsk.newBuilder().setSurvival(true).build();
             responseObserver.onNext(askMsg);
             responseObserver.onCompleted();
         }
-
         protected void join(StreamRequest req, StreamObserver<StreamResponse> responseObserver){
             // 1. get lock
             lock.lock();
@@ -164,6 +163,14 @@ public class NodeServer {
                         .setTimestamp(dft.format(d))
                         .build();
                 responseObserver.onNext(joinResponse);
+
+                Date d2 = new Date();
+                StreamResponse joinResponse2 = StreamResponse.newBuilder()
+                        .setName(nodeName)
+                        .setAddresses(this.jchannel.generateAddMsg())
+                        .setTimestamp(dft.format(d2))
+                        .build();
+                responseObserver.onNext(joinResponse2);
             }
             // 3. run finally, confirm the lock will be unlock.
             finally {
@@ -174,68 +181,91 @@ public class NodeServer {
 
         // Broadcast messages from its clients.
         protected void broadcast(StreamRequest req){
-            ArrayList deleteList = new ArrayList();
-            String name = req.getName();
-            String msg = req.getMessage();
-            String timeStr = req.getTimestamp();
-            StreamResponse broMsg = StreamResponse.newBuilder()
-                    .setName(name)
-                    .setMessage(msg)
-                    .setTimestamp(timeStr)
-                    .build();
-            for (String u : clients.keySet()){
-                try{
-                    clients.get(u).onNext(broMsg);
-                } catch (Exception e){
-                    e.printStackTrace();
-                    deleteList.add(u);
-                    System.out.println("Found a client not working. Delete it.");
+            lock.lock();
+            try{
+                ArrayList deleteList = new ArrayList();
+                String name = req.getName();
+                String msg = req.getMessage();
+                String timeStr = req.getTimestamp();
+                StreamResponse broMsg = StreamResponse.newBuilder()
+                        .setName(name)
+                        .setMessage(msg)
+                        .setTimestamp(timeStr)
+                        .build();
+                for (String u : clients.keySet()){
+                    try{
+                        clients.get(u).onNext(broMsg);
+                    } catch (Exception e){
+                        e.printStackTrace();
+                        deleteList.add(u);
+                        System.out.println("Found a client not working. Delete it.");
+                    }
                 }
-            }
-            if(deleteList.size() != 0){
-                for (int i = 0; i < deleteList.size(); i++) {
-                    clients.remove(deleteList.get(i));
-                    System.out.println("Delete a client responseObserver from Map.");
+                if(deleteList.size() != 0){
+                    for (int i = 0; i < deleteList.size(); i++) {
+                        clients.remove(deleteList.get(i));
+                        System.out.println("Delete a client responseObserver from Map.");
+                    }
+                } else{
+                    System.out.println("All clients are available.");
                 }
-            } else{
-                System.out.println("All clients are available.");
-            }
-            System.out.println("One broadcast for message.");
-            System.out.println(broMsg.toString());
+                System.out.println("One broadcast for message.");
+                System.out.println(broMsg.toString());
 
+            } finally {
+                lock.unlock();
+            }
         }
-        // Broadcast the messages from other nodes.
+        // Broadcast the messages from other nodes or update addresses of servers
         protected void broadcast(String message){
-            //
-            ArrayList deleteList = new ArrayList();
-            // set the message (from other nodes) which is broadcast to all clients.
-            String[] msg = message.split("\t");
-            StreamResponse broMsg = StreamResponse.newBuilder()
-                    .setName(msg[0])
-                    .setMessage(msg[1])
-                    .setTimestamp(msg[2])
-                    .build();
-            // Iteration of StreamObserver for broadcast message.
-            for (String u : clients.keySet()){
-                try{
-                    clients.get(u).onNext(broMsg);
-                } catch (Exception e){
-                    e.printStackTrace();
-                    deleteList.add(u);
-                    System.out.println("Found a client not working. Delete it.");
+            lock.lock();
+            try{
+                StreamResponse broMsg = null;
+                ArrayList deleteList = new ArrayList();
+                // set the message (from other nodes) which is broadcast to all clients.
+                String[] msg = message.split("\t");
+
+                if (!message.contains("\t")){
+                    broMsg = StreamResponse.newBuilder()
+                            .setName(nodeName)
+                            .setAddresses(message)
+                            .build();
+                    System.out.println("One broadcast for updated addresses:");
+                    System.out.println(broMsg.toString());
+                } else{
+                    broMsg = StreamResponse.newBuilder()
+                            .setName(msg[0])
+                            .setMessage(msg[1])
+                            .setTimestamp(msg[2])
+                            .build();
+                    System.out.println("One broadcast for message from other nodes.");
+                    System.out.println(broMsg.toString());
                 }
-            }
-            if(deleteList.size() != 0){
-                for (int i = 0; i < deleteList.size(); i++) {
-                    clients.remove(deleteList.get(i));
-                    System.out.println("Delete a client responseObserver from Map.");
+
+                // Iteration of StreamObserver for broadcast message.
+                for (String u : clients.keySet()){
+                    try{
+                        clients.get(u).onNext(broMsg);
+                    } catch (Exception e){
+                        e.printStackTrace();
+                        deleteList.add(u);
+                        System.out.println("Found a client not working. Delete it.");
+                    }
                 }
-            } else{
-                System.out.println("All clients are available.");
+                if(deleteList.size() != 0){
+                    for (int i = 0; i < deleteList.size(); i++) {
+                        clients.remove(deleteList.get(i));
+                        System.out.println("Delete a client responseObserver from Map.");
+                    }
+                } else{
+                    System.out.println("All clients are available.");
+                }
+
+            } finally {
+                lock.unlock();
             }
-            System.out.println("One broadcast for message from other nodes.");
-            System.out.println(broMsg.toString());
         }
+
         // Send the message to other JChannels
         protected void forward(StreamRequest req){
             String strMsg = Utils.streamToStrMsg(req);

@@ -27,6 +27,7 @@ message StreamResponse {
   string name = 1;
   string message = 2;
   string timestamp = 3;
+  string addresses = 4;
 }
 
 //

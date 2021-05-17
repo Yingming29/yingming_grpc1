@@ -42,4 +42,16 @@ public interface StreamResponseOrBuilder extends
    */
   com.google.protobuf.ByteString
       getTimestampBytes();
+
+  /**
+   * <code>string addresses = 4;</code>
+   * @return The addresses.
+   */
+  java.lang.String getAddresses();
+  /**
+   * <code>string addresses = 4;</code>
+   * @return The bytes for addresses.
+   */
+  com.google.protobuf.ByteString
+      getAddressesBytes();
 }

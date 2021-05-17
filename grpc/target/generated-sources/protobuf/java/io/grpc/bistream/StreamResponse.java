@@ -19,6 +19,7 @@ private static final long serialVersionUID = 0L;
     name_ = "";
     message_ = "";
     timestamp_ = "";
+    addresses_ = "";
   }
 
   @java.lang.Override
@@ -67,6 +68,12 @@ private static final long serialVersionUID = 0L;
             java.lang.String s = input.readStringRequireUtf8();
 
             timestamp_ = s;
+            break;
+          }
+          case 34: {
+            java.lang.String s = input.readStringRequireUtf8();
+
+            addresses_ = s;
             break;
           }
           default: {
@@ -215,6 +222,44 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int ADDRESSES_FIELD_NUMBER = 4;
+  private volatile java.lang.Object addresses_;
+  /**
+   * <code>string addresses = 4;</code>
+   * @return The addresses.
+   */
+  @java.lang.Override
+  public java.lang.String getAddresses() {
+    java.lang.Object ref = addresses_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      addresses_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string addresses = 4;</code>
+   * @return The bytes for addresses.
+   */
+  @java.lang.Override
+  public com.google.protobuf.ByteString
+      getAddressesBytes() {
+    java.lang.Object ref = addresses_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      addresses_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -238,6 +283,9 @@ private static final long serialVersionUID = 0L;
     if (!getTimestampBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 3, timestamp_);
     }
+    if (!getAddressesBytes().isEmpty()) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 4, addresses_);
+    }
     unknownFields.writeTo(output);
   }
 
@@ -255,6 +303,9 @@ private static final long serialVersionUID = 0L;
     }
     if (!getTimestampBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, timestamp_);
+    }
+    if (!getAddressesBytes().isEmpty()) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, addresses_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -277,6 +328,8 @@ private static final long serialVersionUID = 0L;
         .equals(other.getMessage())) return false;
     if (!getTimestamp()
         .equals(other.getTimestamp())) return false;
+    if (!getAddresses()
+        .equals(other.getAddresses())) return false;
     if (!unknownFields.equals(other.unknownFields)) return false;
     return true;
   }
@@ -294,6 +347,8 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getMessage().hashCode();
     hash = (37 * hash) + TIMESTAMP_FIELD_NUMBER;
     hash = (53 * hash) + getTimestamp().hashCode();
+    hash = (37 * hash) + ADDRESSES_FIELD_NUMBER;
+    hash = (53 * hash) + getAddresses().hashCode();
     hash = (29 * hash) + unknownFields.hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -433,6 +488,8 @@ private static final long serialVersionUID = 0L;
 
       timestamp_ = "";
 
+      addresses_ = "";
+
       return this;
     }
 
@@ -462,6 +519,7 @@ private static final long serialVersionUID = 0L;
       result.name_ = name_;
       result.message_ = message_;
       result.timestamp_ = timestamp_;
+      result.addresses_ = addresses_;
       onBuilt();
       return result;
     }
@@ -520,6 +578,10 @@ private static final long serialVersionUID = 0L;
       }
       if (!other.getTimestamp().isEmpty()) {
         timestamp_ = other.timestamp_;
+        onChanged();
+      }
+      if (!other.getAddresses().isEmpty()) {
+        addresses_ = other.addresses_;
         onChanged();
       }
       this.mergeUnknownFields(other.unknownFields);
@@ -775,6 +837,82 @@ private static final long serialVersionUID = 0L;
   checkByteStringIsUtf8(value);
       
       timestamp_ = value;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object addresses_ = "";
+    /**
+     * <code>string addresses = 4;</code>
+     * @return The addresses.
+     */
+    public java.lang.String getAddresses() {
+      java.lang.Object ref = addresses_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        addresses_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string addresses = 4;</code>
+     * @return The bytes for addresses.
+     */
+    public com.google.protobuf.ByteString
+        getAddressesBytes() {
+      java.lang.Object ref = addresses_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        addresses_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string addresses = 4;</code>
+     * @param value The addresses to set.
+     * @return This builder for chaining.
+     */
+    public Builder setAddresses(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      addresses_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string addresses = 4;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearAddresses() {
+      
+      addresses_ = getDefaultInstance().getAddresses();
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string addresses = 4;</code>
+     * @param value The bytes for addresses to set.
+     * @return This builder for chaining.
+     */
+    public Builder setAddressesBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      addresses_ = value;
       onChanged();
       return this;
     }

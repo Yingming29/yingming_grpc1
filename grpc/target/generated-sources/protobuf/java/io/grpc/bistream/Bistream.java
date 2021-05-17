@@ -46,16 +46,16 @@ public final class Bistream {
       "\n\016bistream.proto\022\021cn.yingming.grpc1\"m\n\rS" +
       "treamRequest\022\016\n\006source\030\001 \001(\t\022\014\n\004name\030\002 \001" +
       "(\t\022\014\n\004join\030\003 \001(\010\022\017\n\007message\030\004 \001(\t\022\021\n\ttim" +
-      "estamp\030\005 \001(\t\022\014\n\004quit\030\006 \001(\010\"B\n\016StreamResp" +
+      "estamp\030\005 \001(\t\022\014\n\004quit\030\006 \001(\010\"U\n\016StreamResp" +
       "onse\022\014\n\004name\030\001 \001(\t\022\017\n\007message\030\002 \001(\t\022\021\n\tt" +
-      "imestamp\030\003 \001(\t\"\030\n\006ReqAsk\022\016\n\006source\030\001 \001(\t" +
-      "\"\032\n\006RepAsk\022\020\n\010survival\030\001 \001(\0102\253\001\n\013Communi" +
-      "cate\022]\n\020createConnection\022 .cn.yingming.g" +
-      "rpc1.StreamRequest\032!.cn.yingming.grpc1.S" +
-      "treamResponse\"\000(\0010\001\022=\n\003ask\022\031.cn.yingming" +
-      ".grpc1.ReqAsk\032\031.cn.yingming.grpc1.RepAsk" +
-      "\"\000B)\n\020io.grpc.bistreamB\010BistreamP\001\242\002\010YIN" +
-      "GMINGb\006proto3"
+      "imestamp\030\003 \001(\t\022\021\n\taddresses\030\004 \001(\t\"\030\n\006Req" +
+      "Ask\022\016\n\006source\030\001 \001(\t\"\032\n\006RepAsk\022\020\n\010surviva" +
+      "l\030\001 \001(\0102\253\001\n\013Communicate\022]\n\020createConnect" +
+      "ion\022 .cn.yingming.grpc1.StreamRequest\032!." +
+      "cn.yingming.grpc1.StreamResponse\"\000(\0010\001\022=" +
+      "\n\003ask\022\031.cn.yingming.grpc1.ReqAsk\032\031.cn.yi" +
+      "ngming.grpc1.RepAsk\"\000B)\n\020io.grpc.bistrea" +
+      "mB\010BistreamP\001\242\002\010YINGMINGb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -72,7 +72,7 @@ public final class Bistream {
     internal_static_cn_yingming_grpc1_StreamResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_cn_yingming_grpc1_StreamResponse_descriptor,
-        new java.lang.String[] { "Name", "Message", "Timestamp", });
+        new java.lang.String[] { "Name", "Message", "Timestamp", "Addresses", });
     internal_static_cn_yingming_grpc1_ReqAsk_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_cn_yingming_grpc1_ReqAsk_fieldAccessorTable = new

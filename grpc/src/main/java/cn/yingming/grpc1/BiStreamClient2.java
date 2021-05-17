@@ -60,7 +60,7 @@ public class BiStreamClient2 {
         StreamObserver<StreamRequest> requestStreamObserver = asynStub.createConnection(new StreamObserver<StreamResponse>() {
             @Override
             public void onNext(StreamResponse streamResponse) {
-                System.out.println("Current rpc" + Thread.currentThread().toString());
+                // System.out.println("Current rpc" + Thread.currentThread().toString());
                 System.out.println("[gRPC]:" + streamResponse.getTimestamp() + " [" + streamResponse.getName() + "]: " + streamResponse.getMessage());
             }
 
@@ -93,7 +93,7 @@ public class BiStreamClient2 {
         synchronized (this){
             int count = 0;
             while (true) {
-                System.out.println("Reconnect:" + Thread.currentThread().toString());
+                // System.out.println("Reconnect:" + Thread.currentThread().toString());
                 count++;
                 Random r = new Random();
                 int randomSelect = r.nextInt(serverList.size());
@@ -197,7 +197,7 @@ public class BiStreamClient2 {
                     System.out.println(">");
                     System.out.flush();
                     String line = in.readLine();
-                    System.out.println("Input loop:" + Thread.currentThread().toString());
+                    // System.out.println("Input loop:" + Thread.currentThread().toString());
                     // set up time for msg, and build message
                     Date d = new Date();
                     SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
