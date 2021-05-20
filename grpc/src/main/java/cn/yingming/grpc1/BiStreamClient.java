@@ -275,6 +275,7 @@ public class BiStreamClient {
             // the if statement is for inputLoop thread and state of bidirectional streaming.
             // If the channel
             if (client.msgList.size() != 0 && client.isWork.get()) {
+                // treat a input.
                 requestSender.onNext(client.msgList.get(0));
                 client.mainLock.lock();
                 try {

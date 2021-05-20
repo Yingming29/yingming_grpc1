@@ -5,15 +5,15 @@ option java_outer_classname = "Bistream";
 option objc_class_prefix = "YINGMING";
 package cn.yingming.grpc1;
 
-// define the service..
+// define the services
 service Communicate {
   rpc createConnection(stream StreamRequest) returns (stream StreamResponse) {
   }
   rpc ask(ReqAsk) returns (RepAsk) {
   }
-
 }
-// define the message type
+
+// used for the bidirectional streaming.
 message StreamRequest {
   // the default value of string is empty, and that of boolean is false.
   string source = 1;
@@ -30,7 +30,7 @@ message StreamResponse {
   string addresses = 4;
 }
 
-//
+// The messages used for the try connection.
 message ReqAsk {
   string source = 1;
 }
