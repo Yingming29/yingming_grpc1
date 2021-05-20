@@ -86,24 +86,25 @@ public class BiStreamClient {
 
             @Override
             public void onCompleted() {
+
                 System.out.println("[gRPC]: onCompleted of the current channel.");
             }
         });
         return requestStreamObserver;
     }
 
-    private void tryOneConnect() {
+    private boolean tryOneConnect() {
+        try {
+            Thread.sleep(5000);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
         ReqAsk req = ReqAsk.newBuilder().setSource(this.uuid).build();
         try {
             RepAsk rep = this.blockingStub.withDeadlineAfter(5000, TimeUnit.MILLISECONDS).ask(req);
             if (rep.getSurvival()) {
-                ReentrantLock lock = new ReentrantLock();
-                lock.lock();
-                try {
-                    this.isWork.set(true);
-                } finally {
-                    lock.unlock();
-                }
+                return true;
             } else {
                 System.out.println("[Reconnection]: One server refuses, next server.");
             }
@@ -111,6 +112,7 @@ public class BiStreamClient {
             System.out.println("[Reconnection]: The new try connection is also not available.");
             // e.printStackTrace();
         }
+        return false;
     }
 
     private void join(StreamObserver requestStreamObserver) {
@@ -122,6 +124,13 @@ public class BiStreamClient {
                 .build();
         System.out.println("[gRPC]:Send join request:" + joinReq.toString());
         requestStreamObserver.onNext(joinReq);
+        mainLock.lock();
+        try {
+            isWork.set(true);
+        } finally {
+            mainLock.unlock();
+        }
+
     }
 
     private String setName() throws IOException {
@@ -172,23 +181,26 @@ public class BiStreamClient {
                             .build();
                     // Check the isWork, and do action.Add message to that shared message list or print error.
                     if (isWork.get()) {
-                        inputLock.lock();
-                        try {
-                            this.sharedList.add(msgReq);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        } finally {
-                            inputLock.unlock();
-                        }
+
                     } else {
-                        System.out.println("The connection does not work. Please wait.");
+                        System.out.println("The connection does not work. Store the message.");
                     }
+                    // store the message to
+                    inputLock.lock();
+                    try {
+                        this.sharedList.add(msgReq);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        inputLock.unlock();
+                    }
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
-
+// using a new rpc or other method to treat this message.
         private void isQuit(String line) {
             if (line.equals("quit")) {
                 // Can add a part for sending quit request to server.
@@ -200,20 +212,19 @@ public class BiStreamClient {
                         .setTimestamp(dft.format(d))
                         .setQuit(true)
                         .build();
-                if (isWork.get()) {
-                    inputLock.lock();
-                    try {
-                        this.sharedList.add(msgReq);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        inputLock.unlock();
-                    }
-                } else {
-                    System.out.println("The connection does not work. Please wait.");
+                /*
+                inputLock.lock();
+                try {
+                    this.sharedList.add(msgReq);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    inputLock.unlock();
                 }
                 // End the client.
                 System.exit(0);
+
+                 */
             }
         }
     }
@@ -232,9 +243,9 @@ public class BiStreamClient {
             this.asynStub = CommunicateGrpc.newStub(this.channel);
             this.blockingStub = CommunicateGrpc.newBlockingStub(this.channel);
             // send a unary request for test
-            tryOneConnect();
-            // using isWork to judge
-            if (this.isWork.get()) {
+            boolean tryResult = tryOneConnect();
+            // using try result to judge
+            if (tryResult) {
                 this.address = newAdd;
                 System.out.println("[Reconnection]: Reconnect successfully to server-" + this.address);
                 return true;

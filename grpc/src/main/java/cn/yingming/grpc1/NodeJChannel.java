@@ -59,16 +59,6 @@ public class NodeJChannel implements Receiver{
                     String str = generateAddMsg();
                     newMsg = str;
                     this.service.broadcast(newMsg);
-
-                /*
-                this.nodesMap.put(msg.getSrc(), strs[1]);
-
-                System.out.println("Receive a confirmation from a node, update map.");
-                System.out.println("After receiving: " + this.nodesMap);
-                String str = generateAddMsg();
-                newMsg = str;
-                this.service.broadcast(newMsg);
-                */
                 }
             } else {
                 // Broadcast the common message
@@ -102,8 +92,6 @@ public class NodeJChannel implements Receiver{
         /* When the view is changed by any action, it will send its address to other jchannels
         and update its nodesList.
          */
-        // Send its address
-        sendMyself();
         // compare keySet of nodesList with view list.
         List currentView = new_view.getMembers();
         List currentNodesList = new ArrayList<>(this.nodesMap.keySet());
@@ -121,6 +109,7 @@ public class NodeJChannel implements Receiver{
                     this.nodesMap.put(compare.get(i), "unknown");
                 }
                 System.out.println("The current nodes map: " + this.nodesMap);
+                sendMyself();
             } else if (currentView.size() < currentNodesList.size()) {
                 System.out.println("Remove node inf.");
                 List compare = ListUtils.subtract(currentNodesList, currentView);
