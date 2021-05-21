@@ -25,7 +25,12 @@ message Response{
     MessageRep messageResponse = 1;
     ConnectRep connectResponse = 2;
     DisconnectRep disconnectResponse = 3;
+    UpdateRep updateResponse = 4;
   }
+}
+// update the available server list
+message UpdateRep{
+  string addresses = 1;
 }
 message MessageReq{
   string source = 1;  // uuid

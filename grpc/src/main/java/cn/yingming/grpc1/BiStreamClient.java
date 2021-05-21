@@ -56,18 +56,11 @@ public class BiStreamClient {
     private StreamObserver startGrpc(AtomicBoolean isWork) {
         ReentrantLock lock = new ReentrantLock();
         // Service 1
-        StreamObserver<ConnectReq> requestStreamObserver = asynStub.connect(new StreamObserver<Response>() {
+        StreamObserver<Request> requestStreamObserver = asynStub.connect(new StreamObserver<Response>() {
             @Override
             public void onNext(Response response) {
                 clientStub.judgeResponse(response);
-                // add the treatment of the client stub
-                if (streamResponse.getAddresses()!= ""){
-                    update(streamResponse.getAddresses());
-                } else{
-                    System.out.println("[gRPC]:" + streamResponse.getTimestamp() + " [" + streamResponse.getName() + "]: " + streamResponse.getMessage());
-                }
             }
-
 
             @Override
             public void onError(Throwable throwable) {
@@ -86,7 +79,6 @@ public class BiStreamClient {
 
             @Override
             public void onCompleted() {
-
                 System.out.println("[gRPC]: onCompleted of the current channel.");
             }
         });
@@ -96,13 +88,13 @@ public class BiStreamClient {
     public void update(String addresses){
         String[] add = addresses.split(" ");
         List<String> newList = Arrays.asList(add);
-        lock.lock();
+        mainLock.lock();
         try {
             serverList.clear();
             serverList.addAll(newList);
             System.out.println("Update addresses of servers: " + serverList);
         } finally {
-            lock.unlock();
+            mainLock.unlock();
         }
     }
 
@@ -162,6 +154,7 @@ public class BiStreamClient {
         String line = in.readLine().trim();
         this.name = line;
         this.jchannel_address = "JChannel-" + this.name;
+        return line;
     }
 
     // Set the cluster
@@ -174,7 +167,9 @@ public class BiStreamClient {
         this.cluster = line;
     }
 
-    // Thread for stdin input loop.
+    /* Thread for stdin input loop.
+       The stub-thread can out in the client-stub? not sure.
+     */
     class inputLoop implements Runnable {
         ReentrantLock inputLock;
         ArrayList sharedList;
@@ -200,16 +195,7 @@ public class BiStreamClient {
                     System.out.println(">");
                     System.out.flush();
                     String line = in.readLine();
-                    isQuit(line);
-                    // set up time for msg, and build message
-                    Date d = new Date();
-                    SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
-                    ConnectReq msgReq = ConnectReq.newBuilder()
-                            .setSource(this.uuid)
-                            .setName(this.name)
-                            .setMessage(line)
-                            .setTimestamp(dft.format(d))
-                            .build();
+                    Request msgReq = clientStub.judgeRequest(line);
                     // Check the isWork, and do action.Add message to that shared message list or print error.
                     if (isWork.get()) {
 
@@ -231,20 +217,7 @@ public class BiStreamClient {
                 }
             }
         }
-// using a new rpc or other method to treat this message.
-        private void isQuit(String line) {
-            if (line.equals("quit")) {
-                // Can add a part for sending quit request to server.
-                Date d = new Date();
-                SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
-                ConnectReq msgReq = ConnectReq.newBuilder()
-                        .setSource(this.uuid)
-                        .setName(this.name)
-                        .setTimestamp(dft.format(d))
-                        .setQuit(true)
-                        .build();
-            }
-        }
+
     }
 
     // Do a reconnection loop with given times. e.g. 10 times.
