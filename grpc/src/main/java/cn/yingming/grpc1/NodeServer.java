@@ -1,7 +1,7 @@
 package cn.yingming.grpc1;
 
 import io.grpc.*;
-import io.grpc.bistream.*;
+import io.grpc.jchannelRpc.*;
 import io.grpc.stub.StreamObserver;
 import org.jgroups.Message;
 import org.jgroups.ObjectMessage;
@@ -21,7 +21,7 @@ public class NodeServer {
     String nodeName;
     String jClusterName;
     NodeJChannel jchannel;
-    CommunicateImpl gRPCservice;
+    JChannelsServiceImpl gRPCservice;
     // <no, ip>, it stores all ip address for clients, who are connecting to this server. not useful.
     private ConcurrentHashMap<Integer, String> ips;
     public NodeServer(int port, String nodeName, String jClusterName) throws Exception {
@@ -34,9 +34,9 @@ public class NodeServer {
         // create JChannel given node name and cluster name
         this.jchannel = new NodeJChannel(nodeName, jClusterName, "127.0.0.1:" + port);
         // create grpc server, and its service is given the jchannel for calling send() method on jchannel.
-        this.gRPCservice = new CommunicateImpl(this.jchannel);
+        this.gRPCservice = new JChannelsServiceImpl(this.jchannel);
         this.server = ServerBuilder.forPort(port)
-                .addService(this.gRPCservice)
+                .addService(this.gRPCservice)  // service for bidirectional streaming
                 .intercept(new ClientAddInterceptor())
                 .build();
     }
@@ -72,40 +72,40 @@ public class NodeServer {
     }
 
     // After creation of gRPC, give the service object to Jchannel for calling broadcast().
-    public void giveEntry(CommunicateImpl gRPCservice){
+    public void giveEntry(JChannelsServiceImpl gRPCservice){
         // set service method of JChannel.
         this.jchannel.setService(gRPCservice);
     }
     // gRPC service
-    class CommunicateImpl extends CommunicateGrpc.CommunicateImplBase {
+    class JChannelsServiceImpl extends JChannelsServiceGrpc.JChannelsServiceImplBase {
         // HashMap for storing the clients, includes uuid and StreamObserver.
-        private final ConcurrentHashMap<String, StreamObserver<StreamResponse>> clients = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<String, StreamObserver<ConnectRep>> clients = new ConcurrentHashMap<>();
         protected final ReentrantLock lock = new ReentrantLock();
         protected final NodeJChannel jchannel;
 
         // Constructor with JChannel for calling send() method.
-        private CommunicateImpl(NodeJChannel jchannel) throws Exception {
+        private JChannelsServiceImpl(NodeJChannel jchannel) throws Exception {
             this.jchannel = jchannel;
         }
 
         // service 1, bi-directional streaming rpc
-        public StreamObserver<StreamRequest> createConnection(StreamObserver<StreamResponse> responseObserver){
-            return new StreamObserver<StreamRequest>() {
+        public StreamObserver<ConnectReq> connect(StreamObserver<ConnectRep> responseObserver){
+            return new StreamObserver<ConnectReq>() {
                 @Override
-                public void onNext(StreamRequest streamRequest) {
-                    if (streamRequest.getJoin()){ // true, get join request
-                        System.out.println(streamRequest.getName() + "(" +
-                                streamRequest.getSource() + ") joins the chat.");
+                public void onNext(ConnectReq connectReq) {
+                    if (connectReq.getJoin()){ // true, get join request
+                        System.out.println(connectReq.getName() + "(" +
+                                connectReq.getSource() + ") joins the server.");
                         // Treat the responseObserver of joining client.
-                        join(streamRequest, responseObserver);
-                    } else if (streamRequest.getQuit()){
-                        System.out.println("The client sends a quit request. " + streamRequest.getName() + "(" +
-                                        streamRequest.getSource() + ")");
+                        join(connectReq, responseObserver);
+                    } else if (connectReq.getQuit()){
+                        System.out.println("The client sends a quit request. " + connectReq.getName() + "(" +
+                                connectReq.getSource() + ")");
                         // quit request.
                         lock.lock();
                         try {
                             for (String uuid : clients.keySet()) {
-                                if (uuid.equals(streamRequest.getSource())){
+                                if (uuid.equals(connectReq.getSource())){
                                     clients.remove(uuid);
                                 }
                             }
@@ -114,14 +114,14 @@ public class NodeServer {
                         }
                     } else{
                         // common message for broadcast
-                        System.out.println("[gRPC] " + streamRequest.getName() + " sends message: " + streamRequest.getMessage()
-                                + " at " + streamRequest.getTimestamp());
+                        System.out.println("[gRPC] " + connectReq.getName() + " sends message: " + connectReq.getMessage()
+                                + " at " + connectReq.getTimestamp());
                         lock.lock();
                         try{
                             // broadcast msg to gRPC clients
-                            broadcast(streamRequest);
+                            broadcast(connectReq);
                             // forward msg to other JChannels
-                            forward(streamRequest);
+                            forward(connectReq);
                         }finally {
                             lock.unlock();
                         }
@@ -148,7 +148,7 @@ public class NodeServer {
             responseObserver.onNext(askMsg);
             responseObserver.onCompleted();
         }
-        protected void join(StreamRequest req, StreamObserver<StreamResponse> responseObserver){
+        protected void join(ConnectReq req, StreamObserver<ConnectRep> responseObserver){
             // 1. get lock
             lock.lock();
             // 2. critical section, for Map<> clients.
@@ -157,7 +157,7 @@ public class NodeServer {
                 clients.put(req.getSource(), responseObserver);
                 Date d = new Date();
                 SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
-                StreamResponse joinResponse = StreamResponse.newBuilder()
+                ConnectRep joinResponse = ConnectRep.newBuilder()
                         .setName(nodeName)
                         .setMessage("You join successfully.")
                         .setTimestamp(dft.format(d))
@@ -165,7 +165,7 @@ public class NodeServer {
                 responseObserver.onNext(joinResponse);
 
                 Date d2 = new Date();
-                StreamResponse joinResponse2 = StreamResponse.newBuilder()
+                ConnectRep joinResponse2 = ConnectRep.newBuilder()
                         .setName(nodeName)
                         .setAddresses(this.jchannel.generateAddMsg())
                         .setTimestamp(dft.format(d2))
@@ -180,14 +180,14 @@ public class NodeServer {
         }
 
         // Broadcast messages from its clients.
-        protected void broadcast(StreamRequest req){
+        protected void broadcast(ConnectReq req){
             lock.lock();
             try{
                 ArrayList deleteList = new ArrayList();
                 String name = req.getName();
                 String msg = req.getMessage();
                 String timeStr = req.getTimestamp();
-                StreamResponse broMsg = StreamResponse.newBuilder()
+                ConnectRep broMsg = ConnectRep.newBuilder()
                         .setName(name)
                         .setMessage(msg)
                         .setTimestamp(timeStr)
@@ -220,20 +220,20 @@ public class NodeServer {
         protected void broadcast(String message){
             lock.lock();
             try{
-                StreamResponse broMsg = null;
+                ConnectRep broMsg = null;
                 ArrayList deleteList = new ArrayList();
                 // set the message (from other nodes) which is broadcast to all clients.
                 String[] msg = message.split("\t");
 
                 if (!message.contains("\t")){
-                    broMsg = StreamResponse.newBuilder()
+                    broMsg = ConnectRep.newBuilder()
                             .setName(nodeName)
                             .setAddresses(message)
                             .build();
                     System.out.println("One broadcast for updated addresses:");
                     System.out.println(broMsg.toString());
                 } else{
-                    broMsg = StreamResponse.newBuilder()
+                    broMsg = ConnectRep.newBuilder()
                             .setName(msg[0])
                             .setMessage(msg[1])
                             .setTimestamp(msg[2])
@@ -267,7 +267,7 @@ public class NodeServer {
         }
 
         // Send the message to other JChannels
-        protected void forward(StreamRequest req){
+        protected void forward(ConnectReq req){
             String strMsg = Utils.streamToStrMsg(req);
             Message msg = new ObjectMessage(null, strMsg);
             // send messages exclude itself.
@@ -279,6 +279,7 @@ public class NodeServer {
             }
         }
     }
+
     // Get ip address of client when receive the join request.
     private class ClientAddInterceptor implements ServerInterceptor {
         @Override

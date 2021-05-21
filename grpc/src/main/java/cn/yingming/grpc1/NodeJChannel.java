@@ -3,10 +3,9 @@ package cn.yingming.grpc1;
 import org.apache.commons.collections.ListUtils;
 import org.jgroups.*;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -16,9 +15,10 @@ public class NodeJChannel implements Receiver{
     String node_name;
     String cluster_name;
     ReentrantLock lock;
-    NodeServer.CommunicateImpl service;
+    NodeServer.JChannelsServiceImpl service;
     String grpcAddress;
     ConcurrentHashMap nodesMap;
+    ConcurrentHashMap serviceMap;
 
     NodeJChannel(String node_name, String cluster_name, String grpcAddress) throws Exception {
 
@@ -31,6 +31,7 @@ public class NodeJChannel implements Receiver{
         this.channel.setReceiver(this).connect(cluster_name);
         this.lock = new ReentrantLock();
         this.service = null;
+        this.serviceMap = new ConcurrentHashMap<String, ClusterMap>();
         // put itself into available nodes list
         this.nodesMap.put(this.channel.getAddress(), this.grpcAddress);
         System.out.println(this.nodesMap);
@@ -82,7 +83,7 @@ public class NodeJChannel implements Receiver{
 
     }
 
-    public void setService(NodeServer.CommunicateImpl gRPCservice){
+    public void setService(NodeServer.JChannelsServiceImpl gRPCservice){
         this.service = gRPCservice;
     }
 
@@ -137,5 +138,32 @@ public class NodeJChannel implements Receiver{
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static class ClusterMap{
+        protected final Map<Address, String> map;
+        protected final ReentrantLock lock = new ReentrantLock();
+        public ClusterMap(Map<Address, String> map){
+            this.map = map;
+        }
+        protected Map<Address, String> getMap(){
+            return this.map;
+        }
+        protected ReentrantLock getLock(){
+            return lock;
+        }
+    }
+
+    private void connectCluster(String cluster, String JChannel_address, String uuid){
+        this.lock.lock();
+        try{
+            if (serviceMap.containsKey(cluster)){
+                System.out.println(JChannel_address + " connects to the existing cluster: " + cluster);
+
+            }
+        } finally {
+
+        }
+
     }
 }

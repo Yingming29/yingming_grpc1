@@ -7,14 +7,14 @@ package cn.yingming.grpc1;
 
 // define the services
 service Communicate {
-  rpc createConnection(stream StreamRequest) returns (stream StreamResponse) {
+  rpc connect(stream ConnectReq) returns (stream ConnectRep) {
   }
   rpc ask(ReqAsk) returns (RepAsk) {
   }
 }
 
 // used for the bidirectional streaming.
-message StreamRequest {
+message ConnectReq {
   // the default value of string is empty, and that of boolean is false.
   string source = 1;
   string name = 2;
@@ -23,7 +23,7 @@ message StreamRequest {
   string timestamp = 5;
   bool quit = 6;
 }
-message StreamResponse {
+message ConnectRep {
   string name = 1;
   string message = 2;
   string timestamp = 3;

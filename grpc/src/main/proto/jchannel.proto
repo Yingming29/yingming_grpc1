@@ -6,41 +6,67 @@ option objc_class_prefix = "YINGMING";
 package cn.yingming.grpc1;
 
 service JChannelsService{
-  rpc connect(ConnectReq) returns (ConnectRep){
+  rpc connect(stream Request) returns (stream Response) {
   }
   rpc disconnect(DisconnectReq) returns (DisconnectRep){
   }
-  rpc send(SendReq) returns (SendRep){
+  rpc ask(ReqAsk) returns (RepAsk) {
   }
-
+}
+message Request{
+  oneof oneType{
+    MessageReq messageRequest = 1;
+    ConnectReq connectRequest = 2;
+    DisconnectReq disconnectRequest = 3;
+  }
+}
+message Response{
+  oneof oneType{
+    MessageRep messageResponse = 1;
+    ConnectRep connectResponse = 2;
+    DisconnectRep disconnectResponse = 3;
+  }
+}
+message MessageReq{
+  string source = 1;  // uuid
+  string jchannel_address = 2;  // the fake address of client jchannel, sender
+  string cluster = 3;
+  string content = 4;
+  string timestamp = 5;
+  string destination = 6;  // "" means the broadcast in this cluster, receivers
+}
+message MessageRep{
+  string jchannel_address = 1; // sender
+  string content = 2;
+}
+// used for the bidirectional streaming.
+message ConnectReq {
+  // the default value of string is empty, and that of boolean is false.
+  string source = 1;  // uuid
+  string jchannel_address = 2;   // name
+  string cluster = 3;
+  string timestamp = 4;
 }
 
-// used for jchannel service
-message ConnectReq{
-  string source = 1;
-  string name = 2;
-  string cluster_name = 3;
+message ConnectRep {
+  bool result = 1;
 }
-message ConnectRep{
-  string result = 1;
-  int32 index = 2;
-  int32 size = 3;
-}
+
+// disconnect()
 message DisconnectReq{
   string source = 1;
-  string name = 2;
-  string cluster_name = 3;
+  string jchannel_address = 2;
+  string cluster = 3;
+  string timestamp = 4;
 }
 message DisconnectRep{
-  string result = 1;
+  bool result = 1;
 }
-message SendReq{
+// The messages used for the try connection.
+message ReqAsk {
   string source = 1;
-  string name = 2;
-  string message = 3;
-  string address = 4;
-  string cluster_name = 5;
 }
-message SendRep{
-  string
+message RepAsk{
+  bool survival = 1;
 }
+

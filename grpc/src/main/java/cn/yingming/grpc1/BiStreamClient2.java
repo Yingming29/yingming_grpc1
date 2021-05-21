@@ -1,8 +1,8 @@
+/*
 package cn.yingming.grpc1;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.bistream.*;
 import io.grpc.stub.StreamObserver;
 
 import java.io.BufferedReader;
@@ -39,7 +39,7 @@ public class BiStreamClient2 {
         // shared part, in lock
         /* isWork means whether the connection is available, which is control by
 
-         */
+
         this.isWork = new AtomicBoolean(false);
         this.serverList = new ArrayList();
     }
@@ -297,3 +297,4 @@ public class BiStreamClient2 {
         client.start();
     }
 }
+*/

@@ -1,12 +1,12 @@
 package cn.yingming.grpc1;
 
-import io.grpc.bistream.StreamRequest;
+import io.grpc.jchannelRpc.ConnectReq;
 
 import java.io.File;
 import java.io.IOException;
 
 public class Utils {
-    public static String streamToStrMsg(StreamRequest req){
+    public static String streamToStrMsg(ConnectReq req){
         String name;
         String msg;
         String timeStr;
