@@ -81,7 +81,7 @@ public class NodeServer {
         // HashMap for storing the clients, includes uuid and StreamObserver.
         private final ConcurrentHashMap<String, StreamObserver<Response>> clients = new ConcurrentHashMap<String, StreamObserver<Response>>();
         protected final ReentrantLock lock = new ReentrantLock();
-        protected final NodeJChannel jchannel;
+        NodeJChannel jchannel;
 
         // Constructor with JChannel for calling send() method.
         private JChannelsServiceImpl(NodeJChannel jchannel) throws Exception {
@@ -100,6 +100,7 @@ public class NodeServer {
                                 req.getConnectRequest().getCluster());
                         // Store the responseObserver of joining client.
                         join(req.getConnectRequest(), responseObserver);
+                        share(req);
                     } else if (req.hasDisconnectRequest()){
                         // disconnect()
                         System.out.println("The client sends a disconnect() request. "
@@ -108,16 +109,23 @@ public class NodeServer {
                         // remove responseObserver for the disconnect()
                         lock.lock();
                         try {
+                            // remove the client responseObserver
                             for (String uuid : clients.keySet()) {
                                 if (uuid.equals(req.getDisconnectRequest().getSource())){
                                     clients.remove(uuid);
                                 }
                             }
+                            // remove the client from its cluster
+                            jchannel.disconnectCluster(req.getDisconnectRequest().getCluster(),
+                                    req.getDisconnectRequest().getJchannelAddress(),
+                                    req.getDisconnectRequest().getSource());
                         } finally {
                             lock.unlock();
                         }
-                        // remove from cluster Map. add
+                        share(req);
+
                     } else{
+                        // treat the common message
                         MessageReq msgReq = req.getMessageRequest();
                         // send() messages for broadcast and unicast in the cluster for clients
                         System.out.println("[gRPC] " + msgReq.getJchannelAddress() + " sends message: " + msgReq.getContent()
@@ -127,22 +135,23 @@ public class NodeServer {
                         } else{
                             System.out.println("Unicast in the cluster " + msgReq.getCluster() + " to " + msgReq.getDestination());
                         }
-
                         lock.lock();
                         try{
-                            // broadcast msg to gRPC clients
-                            broadcast(connectReq);
+                            // send msg to its gRPC clients
+                            broadcast(msgReq);
                             // forward msg to other JChannels
-                            forward(connectReq);
+                            forward(msgReq);
                         }finally {
                             lock.unlock();
                         }
                     }
                 }
-
+                // can add an automatic deleting the cancelled client.
                 @Override
                 public void onError(Throwable throwable) {
-                    System.out.println(throwable.getMessage());
+
+                    System.out.println("onError:" + throwable.getMessage());
+                    System.out.println(responseObserver);
                 }
 
                 @Override
@@ -160,16 +169,20 @@ public class NodeServer {
             responseObserver.onNext(askMsg);
             responseObserver.onCompleted();
         }
+        // add view
         protected void join(ConnectReq req, StreamObserver<Response> responseObserver){
             // 1. get lock
             lock.lock();
-            // 2. critical section, for Map<> clients.
+            // 2. critical section,
             try{
-                // add a new client to Map<uuid, responseObserver>
-                // return a connect response
+                /* add a new client to Map<uuid, responseObserver>
+                 return a connect response
+                 */
                 clients.put(req.getSource(), responseObserver);
-                Date d = new Date();
-                SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
+                // String cluster, String JChannel_address, String uuid
+                // <cluster, <uuid, JChanner_address>>
+                jchannel.connectCluster(req.getCluster(), req.getJchannelAddress(), req.getSource());
+                // return response for result.
                 ConnectRep joinResponse = ConnectRep.newBuilder()
                         .setResult(true)
                         .build();
@@ -177,7 +190,7 @@ public class NodeServer {
                         .setConnectResponse(joinResponse)
                         .build();
                 responseObserver.onNext(rep);
-                // update the available servers
+                // return response for updating the available servers
                 UpdateRep updateRep = UpdateRep.newBuilder()
                         .setAddresses(this.jchannel.generateAddMsg())
                         .build();
@@ -194,37 +207,42 @@ public class NodeServer {
         }
 
         // Broadcast messages from its clients.
-        protected void broadcast(ConnectReq req){
+        public void broadcast(MessageReq req){
             lock.lock();
             try{
                 ArrayList deleteList = new ArrayList();
-                String name = req.getName();
-                String msg = req.getMessage();
-                String timeStr = req.getTimestamp();
-                Response broMsg = ConnectRep.newBuilder()
-                        .setName(name)
-                        .setMessage(msg)
-                        .setTimestamp(timeStr)
+                MessageRep msgRep = MessageRep.newBuilder()
+                        .setJchannelAddress(req.getJchannelAddress())
+                        .setContent(req.getContent())
                         .build();
-                for (String u : clients.keySet()){
-                    try{
-                        clients.get(u).onNext(broMsg);
-                    } catch (Exception e){
-                        e.printStackTrace();
-                        deleteList.add(u);
-                        System.out.println("Found a client not working. Delete it.");
+                Response rep = Response.newBuilder()
+                        .setMessageResponse(msgRep)
+                        .build();
+                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(req.getCluster());
+                for (String uuid : clients.keySet()){
+                    if (clusterObj.getMap().containsKey(uuid)){
+                        try{
+                            // send message to the client in the same cluster, which is connecting
+                            // to this node.
+                            clients.get(uuid).onNext(rep);
+                            System.out.println("Send message to a JChannel-Client, " + clusterObj.getMap().get(uuid));
+                        } catch (Exception e){
+                            e.printStackTrace();
+                            deleteList.add(uuid);
+                            System.out.println("Found a client not working. Delete it from .");
+                        }
                     }
                 }
                 if(deleteList.size() != 0){
                     for (int i = 0; i < deleteList.size(); i++) {
                         clients.remove(deleteList.get(i));
-                        System.out.println("Delete a client responseObserver from Map.");
+                        // add, remove the uuid and JChannel_address key-value from the cluster map
+                        clusterObj.getMap().remove(deleteList.get(i));
+                        System.out.println("Delete a client.");
                     }
-                } else{
-                    System.out.println("All clients are available.");
                 }
                 System.out.println("One broadcast for message.");
-                System.out.println(broMsg.toString());
+                System.out.println(msgRep.toString());
 
             } finally {
                 lock.unlock();
@@ -233,9 +251,7 @@ public class NodeServer {
         // Broadcast the messages from other nodes or update addresses of servers
         protected void broadcast(String message){
             lock.lock();
-            /*
             try{
-
                 Response broMsg = null;
                 ArrayList deleteList = new ArrayList();
                 // set the message (from other nodes) which is broadcast to all clients.
@@ -280,14 +296,12 @@ public class NodeServer {
             } finally {
                 lock.unlock();
             }
-
-             */
         }
 
         // Send the message to other JChannels
-        protected void forward(ConnectReq req){
-
-            String strMsg = Utils.streamToStrMsg(req);
+        // common message
+        protected void forward(MessageReq req){
+            String strMsg = Utils.msgReqToMsgStr(req);
             Message msg = new ObjectMessage(null, strMsg);
             // send messages exclude itself.
             msg.setFlagIfAbsent(Message.TransientFlag.DONT_LOOPBACK);
@@ -297,6 +311,19 @@ public class NodeServer {
                 e.printStackTrace();
             }
 
+        }
+
+        // share the cluster information to other nodes.
+        protected void share(Request req){
+            String msgStr = Utils.conDisReqToStrMsg(req);
+            Message msg = new ObjectMessage(null, msgStr);
+            // send messages exclude itself.
+            msg.setFlagIfAbsent(Message.TransientFlag.DONT_LOOPBACK);
+            try {
+                this.jchannel.channel.send(msg);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

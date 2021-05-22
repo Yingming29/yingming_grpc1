@@ -41,7 +41,7 @@ public class NodeJChannel implements Receiver{
     public void receive(Message msg) {
         String msgStr = msg.getObject();
         String newMsg = null;
-        // two types of broadcast message, update address or broadcast the common message
+        // some types of broadcast messages, update address or broadcast the common message
         synchronized (this.nodesMap){
             if (msgStr.startsWith("grpcAddress:")){
                 String[] strs = msgStr.split(":", 2);
@@ -61,7 +61,7 @@ public class NodeJChannel implements Receiver{
                     newMsg = str;
                     this.service.broadcast(newMsg);
                 }
-            } else {
+            } else if {
                 // Broadcast the common message
                 String line = msg.getSrc() + ": " + msg.getObject();
                 System.out.println("[JChannel] " + line);
@@ -140,30 +140,58 @@ public class NodeJChannel implements Receiver{
         }
     }
 
-    private static class ClusterMap{
+    public class ClusterMap{
         protected ConcurrentHashMap<String, String> map;
         protected int viewSize;
-        public ClusterMap(){
+        protected String creator;
+        public ClusterMap(String creator){
             this.map = new ConcurrentHashMap<String, String>();
             this.viewSize = 0;
+            this.creator = creator;
         }
         public ConcurrentHashMap getMap(){
             return map;
         }
+        // add the methods for view
         public int getViewSize(){
             return viewSize;
         }
+        public void addViewSize(){
+            viewSize++;
+        }
     }
 
-    private void connectCluster(String cluster, String JChannel_address, String uuid){
+    // add view action and forward
+    public void connectCluster(String cluster, String JChannel_address, String uuid){
         lock.lock();
         try{
             if (serviceMap.containsKey(cluster)){
                 System.out.println(JChannel_address + " connects to the existing cluster: " + cluster);
                 ClusterMap clusterObj = (ClusterMap) serviceMap.get(cluster);
-
+                clusterObj.getMap().put(uuid, JChannel_address);
             } else{
-
+                System.out.println(JChannel_address + " connects to a new cluster: " + cluster);
+                // create new cluster object and set it as the creator
+                ClusterMap clusterObj = new ClusterMap(JChannel_address);
+                clusterObj.getMap().put(uuid, JChannel_address);
+                // put into serviceMap
+                serviceMap.put(cluster, clusterObj);
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+    // add view action and forward
+    public void disconnectCluster(String cluster, String JChannel_address, String uuid){
+        lock.lock();
+        try{
+            ClusterMap m = (ClusterMap) serviceMap.get(cluster);
+            if (m.getMap().size() == 1 && m.getMap().get(uuid).equals(JChannel_address)){
+                serviceMap.remove(cluster);
+                System.out.println("The last JChannel-Client quits and deletes the cluster, " + cluster);
+            } else if (m.getMap().size() > 1){
+                m.getMap().remove(uuid);
+                System.out.println(JChannel_address + " quits " + cluster);
             }
         } finally {
             lock.unlock();
