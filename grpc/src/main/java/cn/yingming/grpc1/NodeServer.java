@@ -248,37 +248,27 @@ public class NodeServer {
                 lock.unlock();
             }
         }
-        // Broadcast the messages from other nodes or update addresses of servers
-        protected void broadcast(String message){
+        // Broadcast the messages for updating addresses of servers
+        protected void broadcastServers(String message){
+            ArrayList deleteList = new ArrayList();
+            // set the message (from other nodes) which is broadcast to all clients.
+            String[] msg = message.split("\t");
+
+            UpdateRep updateMsg = UpdateRep.newBuilder()
+                    .setAddresses(message)
+                    .build();
+            Response broMsg = Response.newBuilder()
+                    .setUpdateResponse(updateMsg)
+                    .build();
             lock.lock();
             try{
-                Response broMsg = null;
-                ArrayList deleteList = new ArrayList();
-                // set the message (from other nodes) which is broadcast to all clients.
-                String[] msg = message.split("\t");
-
-                if (!message.contains("\t")){
-                    broMsg = ConnectRep.newBuilder()
-                            .setName(nodeName)
-                            .setAddresses(message)
-                            .build();
-                    System.out.println("One broadcast for updated addresses:");
-                    System.out.println(broMsg.toString());
-                } else{
-                    broMsg = ConnectRep.newBuilder()
-                            .setName(msg[0])
-                            .setMessage(msg[1])
-                            .setTimestamp(msg[2])
-                            .build();
-                    System.out.println("One broadcast for message from other nodes.");
-                    System.out.println(broMsg.toString());
-                }
-
                 // Iteration of StreamObserver for broadcast message.
                 for (String u : clients.keySet()){
                     try{
                         clients.get(u).onNext(broMsg);
                     } catch (Exception e){
+                        // add
+                        // remove the error detection part. move to onError()
                         e.printStackTrace();
                         deleteList.add(u);
                         System.out.println("Found a client not working. Delete it.");

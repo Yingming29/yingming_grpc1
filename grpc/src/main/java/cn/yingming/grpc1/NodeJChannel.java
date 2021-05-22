@@ -59,14 +59,19 @@ public class NodeJChannel implements Receiver{
                     System.out.println("After receiving: " + this.nodesMap);
                     String str = generateAddMsg();
                     newMsg = str;
-                    this.service.broadcast(newMsg);
+                    this.service.broadcastServers(newMsg);
                 }
-            } else if {
-                // Broadcast the common message
-                String line = msg.getSrc() + ": " + msg.getObject();
-                System.out.println("[JChannel] " + line);
-                newMsg = msg.getObject().toString();
-                this.service.broadcast(newMsg);
+            } else if (msgStr.startsWith("[Connect]")){
+                // Treat the shared connect() request from other nodes for cluster information.
+                // a. Add the client to its cluster map
+                String[] strs = msgStr.split(" ");
+                System.out.println("[JChannel] Receive a shared connect() request for updating th cluster information.");
+                connectCluster(strs[3], strs[2], strs[1]);
+            } else if (msgStr.startsWith("[Disconnect]")){
+                // Treat the shared connect() request from other nodes for cluster information.
+                String[] strs = msgStr.split(" ");
+                System.out.println("[JChannel] Receive a shared disconnect() request for updating th cluster information.");
+                disconnectCluster(strs[3], strs[2], strs[1]);
             }
         }
     }
@@ -120,7 +125,7 @@ public class NodeJChannel implements Receiver{
                 System.out.println("The current nodes map: " + this.nodesMap);
                 String str = generateAddMsg();
 
-                this.service.broadcast(str);
+                this.service.broadcastServers(str);
             } else {
                 System.out.println("No change of node inf.");
             }
