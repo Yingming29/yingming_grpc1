@@ -79,7 +79,7 @@ public class NodeServer {
     // gRPC service
     class JChannelsServiceImpl extends JChannelsServiceGrpc.JChannelsServiceImplBase {
         // HashMap for storing the clients, includes uuid and StreamObserver.
-        private final ConcurrentHashMap<String, StreamObserver<ConnectRep>> clients = new ConcurrentHashMap<>();
+        private final ConcurrentHashMap<String, StreamObserver<Response>> clients = new ConcurrentHashMap<String, StreamObserver<Response>>();
         protected final ReentrantLock lock = new ReentrantLock();
         protected final NodeJChannel jchannel;
 
@@ -89,33 +89,45 @@ public class NodeServer {
         }
 
         // service 1, bi-directional streaming rpc
-        public StreamObserver<ConnectReq> connect(StreamObserver<ConnectRep> responseObserver){
-            return new StreamObserver<ConnectReq>() {
+        public StreamObserver<Request> connect(StreamObserver<Response> responseObserver){
+            return new StreamObserver<Request>() {
                 @Override
-                public void onNext(ConnectReq connectReq) {
-                    if (connectReq.getJoin()){ // true, get join request
-                        System.out.println(connectReq.getName() + "(" +
-                                connectReq.getSource() + ") joins the server.");
-                        // Treat the responseObserver of joining client.
-                        join(connectReq, responseObserver);
-                    } else if (connectReq.getQuit()){
-                        System.out.println("The client sends a quit request. " + connectReq.getName() + "(" +
-                                connectReq.getSource() + ")");
-                        // quit request.
+                public void onNext(Request req) {
+                    if (req.hasConnectRequest()){
+                        // connect()
+                        System.out.println(req.getConnectRequest().getJchannelAddress() + "(" +
+                                req.getConnectRequest().getSource() + ") joins the cluster, " +
+                                req.getConnectRequest().getCluster());
+                        // Store the responseObserver of joining client.
+                        join(req.getConnectRequest(), responseObserver);
+                    } else if (req.hasDisconnectRequest()){
+                        // disconnect()
+                        System.out.println("The client sends a disconnect() request. "
+                                + req.getDisconnectRequest().getJchannelAddress() + "("
+                                + req.getDisconnectRequest().getCluster() + ")");
+                        // remove responseObserver for the disconnect()
                         lock.lock();
                         try {
                             for (String uuid : clients.keySet()) {
-                                if (uuid.equals(connectReq.getSource())){
+                                if (uuid.equals(req.getDisconnectRequest().getSource())){
                                     clients.remove(uuid);
                                 }
                             }
                         } finally {
                             lock.unlock();
                         }
+                        // remove from cluster Map. add
                     } else{
-                        // common message for broadcast
-                        System.out.println("[gRPC] " + connectReq.getName() + " sends message: " + connectReq.getMessage()
-                                + " at " + connectReq.getTimestamp());
+                        MessageReq msgReq = req.getMessageRequest();
+                        // send() messages for broadcast and unicast in the cluster for clients
+                        System.out.println("[gRPC] " + msgReq.getJchannelAddress() + " sends message: " + msgReq.getContent()
+                                + " at " + msgReq.getTimestamp());
+                        if (msgReq.getDestination().equals(null)||msgReq.getDestination().equals("")){
+                            System.out.println("Broadcast in the cluster " + msgReq.getCluster());
+                        } else{
+                            System.out.println("Unicast in the cluster " + msgReq.getCluster() + " to " + msgReq.getDestination());
+                        }
+
                         lock.lock();
                         try{
                             // broadcast msg to gRPC clients
@@ -148,29 +160,31 @@ public class NodeServer {
             responseObserver.onNext(askMsg);
             responseObserver.onCompleted();
         }
-        protected void join(ConnectReq req, StreamObserver<ConnectRep> responseObserver){
+        protected void join(ConnectReq req, StreamObserver<Response> responseObserver){
             // 1. get lock
             lock.lock();
             // 2. critical section, for Map<> clients.
             try{
                 // add a new client to Map<uuid, responseObserver>
+                // return a connect response
                 clients.put(req.getSource(), responseObserver);
                 Date d = new Date();
                 SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
                 ConnectRep joinResponse = ConnectRep.newBuilder()
-                        .setName(nodeName)
-                        .setMessage("You join successfully.")
-                        .setTimestamp(dft.format(d))
+                        .setResult(true)
                         .build();
-                responseObserver.onNext(joinResponse);
-
-                Date d2 = new Date();
-                ConnectRep joinResponse2 = ConnectRep.newBuilder()
-                        .setName(nodeName)
+                Response rep = Response.newBuilder()
+                        .setConnectResponse(joinResponse)
+                        .build();
+                responseObserver.onNext(rep);
+                // update the available servers
+                UpdateRep updateRep = UpdateRep.newBuilder()
                         .setAddresses(this.jchannel.generateAddMsg())
-                        .setTimestamp(dft.format(d2))
                         .build();
-                responseObserver.onNext(joinResponse2);
+                Response rep2 = Response.newBuilder()
+                        .setUpdateResponse(updateRep)
+                        .build();
+                responseObserver.onNext(rep2);
             }
             // 3. run finally, confirm the lock will be unlock.
             finally {
@@ -187,7 +201,7 @@ public class NodeServer {
                 String name = req.getName();
                 String msg = req.getMessage();
                 String timeStr = req.getTimestamp();
-                ConnectRep broMsg = ConnectRep.newBuilder()
+                Response broMsg = ConnectRep.newBuilder()
                         .setName(name)
                         .setMessage(msg)
                         .setTimestamp(timeStr)
@@ -220,7 +234,7 @@ public class NodeServer {
         protected void broadcast(String message){
             lock.lock();
             try{
-                ConnectRep broMsg = null;
+                Response broMsg = null;
                 ArrayList deleteList = new ArrayList();
                 // set the message (from other nodes) which is broadcast to all clients.
                 String[] msg = message.split("\t");
