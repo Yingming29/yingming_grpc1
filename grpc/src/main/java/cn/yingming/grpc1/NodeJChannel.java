@@ -43,6 +43,7 @@ public class NodeJChannel implements Receiver{
         String newMsg = null;
         // some types of broadcast messages, update address or broadcast the common message
         synchronized (this.nodesMap){
+            // condition 1, update server messgage
             if (msgStr.startsWith("grpcAddress:")){
                 String[] strs = msgStr.split(":", 2);
                 boolean same = false;
@@ -51,9 +52,11 @@ public class NodeJChannel implements Receiver{
                         same = true;
                     }
                 }
+                // condition 1.1, no change
                 if (same){
                     System.out.println("Receive a confirmation from a node, but no change.");
                 } else{
+                    // condition 1.2 changed server list, update list and broadcast update servers
                     this.nodesMap.put(msg.getSrc(), strs[1]);
                     System.out.println("Receive a confirmation from a node, update map.");
                     System.out.println("After receiving: " + this.nodesMap);
@@ -61,12 +64,15 @@ public class NodeJChannel implements Receiver{
                     newMsg = str;
                     this.service.broadcastServers(newMsg);
                 }
+                // condition 2, connect() request
             } else if (msgStr.startsWith("[Connect]")){
                 // Treat the shared connect() request from other nodes for cluster information.
                 // a. Add the client to its cluster map
                 String[] strs = msgStr.split(" ");
                 System.out.println("[JChannel] Receive a shared connect() request for updating th cluster information.");
                 connectCluster(strs[3], strs[2], strs[1]);
+
+                // condition 3, disconnect()
             } else if (msgStr.startsWith("[Disconnect]")){
                 // Treat the shared connect() request from other nodes for cluster information.
                 String[] strs = msgStr.split(" ");
