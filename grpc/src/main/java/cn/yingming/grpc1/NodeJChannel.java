@@ -141,29 +141,32 @@ public class NodeJChannel implements Receiver{
     }
 
     private static class ClusterMap{
-        protected final Map<Address, String> map;
-        protected final ReentrantLock lock = new ReentrantLock();
-        public ClusterMap(Map<Address, String> map){
-            this.map = map;
+        protected ConcurrentHashMap<String, String> map;
+        protected int viewSize;
+        public ClusterMap(){
+            this.map = new ConcurrentHashMap<String, String>();
+            this.viewSize = 0;
         }
-        protected Map<Address, String> getMap(){
-            return this.map;
+        public ConcurrentHashMap getMap(){
+            return map;
         }
-        protected ReentrantLock getLock(){
-            return lock;
+        public int getViewSize(){
+            return viewSize;
         }
     }
 
     private void connectCluster(String cluster, String JChannel_address, String uuid){
-        this.lock.lock();
+        lock.lock();
         try{
             if (serviceMap.containsKey(cluster)){
                 System.out.println(JChannel_address + " connects to the existing cluster: " + cluster);
+                ClusterMap clusterObj = (ClusterMap) serviceMap.get(cluster);
+
+            } else{
 
             }
         } finally {
-
+            lock.unlock();
         }
-
     }
 }

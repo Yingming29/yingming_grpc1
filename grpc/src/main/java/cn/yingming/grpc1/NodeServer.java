@@ -233,7 +233,9 @@ public class NodeServer {
         // Broadcast the messages from other nodes or update addresses of servers
         protected void broadcast(String message){
             lock.lock();
+            /*
             try{
+
                 Response broMsg = null;
                 ArrayList deleteList = new ArrayList();
                 // set the message (from other nodes) which is broadcast to all clients.
@@ -278,10 +280,13 @@ public class NodeServer {
             } finally {
                 lock.unlock();
             }
+
+             */
         }
 
         // Send the message to other JChannels
         protected void forward(ConnectReq req){
+
             String strMsg = Utils.streamToStrMsg(req);
             Message msg = new ObjectMessage(null, strMsg);
             // send messages exclude itself.
@@ -291,6 +296,7 @@ public class NodeServer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
         }
     }
 

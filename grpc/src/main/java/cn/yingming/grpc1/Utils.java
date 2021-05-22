@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class Utils {
+    /*
     public static String streamToStrMsg(ConnectReq req){
         String name;
         String msg;
@@ -31,16 +32,5 @@ public class Utils {
         return strMsg;
     }
 
-    public static void createTxtFile(String name) throws IOException {
-        String fileName = "grpc/txt/" + name + "-signal.txt";
-        File sharedFileName1 = new File(fileName);
-        if (!sharedFileName1.exists()) {
-            sharedFileName1.createNewFile();
-            System.out.println(name + ": Create .txt file for server state and signal.");
-        } else {
-            sharedFileName1.delete();
-            sharedFileName1.createNewFile();
-            System.out.println(name + ": Delete existing the file and Create .txt file.");
-        }
-    }
+     */
 }
