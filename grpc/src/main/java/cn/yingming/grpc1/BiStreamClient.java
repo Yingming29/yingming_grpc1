@@ -22,15 +22,15 @@ public class BiStreamClient {
     private JChannelsServiceGrpc.JChannelsServiceBlockingStub blockingStub;
     private JChannelsServiceGrpc.JChannelsServiceStub asynStub;
     private String address;
-    private String uuid;
+    public String uuid;
     private String name;
     private ArrayList serverList;
     // lock of main thread
     private final ReentrantLock mainLock;
     private AtomicBoolean isWork;
     private ArrayList msgList;
-    private String jchannel_address;
-    private String cluster;
+    public String jchannel_address;
+    public String cluster;
     private ClientStub clientStub;
 
     //

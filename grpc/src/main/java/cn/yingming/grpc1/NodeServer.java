@@ -6,9 +6,7 @@ import io.grpc.stub.StreamObserver;
 import org.jgroups.Message;
 import org.jgroups.ObjectMessage;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -101,6 +99,7 @@ public class NodeServer {
                         // Store the responseObserver of joining client.
                         join(req.getConnectRequest(), responseObserver);
                         share(req);
+
                     } else if (req.hasDisconnectRequest()){
                         // disconnect()
                         System.out.println("The client sends a disconnect() request. "
@@ -132,17 +131,26 @@ public class NodeServer {
                                 + " at " + msgReq.getTimestamp());
                         if (msgReq.getDestination().equals(null)||msgReq.getDestination().equals("")){
                             System.out.println("Broadcast in the cluster " + msgReq.getCluster());
+                            lock.lock();
+                            try{
+                                // send msg to its gRPC clients
+                                broadcast(msgReq);
+                                // forward msg to other JChannels
+                                forward(msgReq);
+                            }finally {
+                                lock.unlock();
+                            }
                         } else{
                             System.out.println("Unicast in the cluster " + msgReq.getCluster() + " to " + msgReq.getDestination());
-                        }
-                        lock.lock();
-                        try{
-                            // send msg to its gRPC clients
-                            broadcast(msgReq);
-                            // forward msg to other JChannels
-                            forward(msgReq);
-                        }finally {
-                            lock.unlock();
+                            lock.lock();
+                            try{
+                                // send msg to its gRPC clients
+                                unicast(msgReq);
+                                // forward msg to other JChannels
+                                forward(msgReq);
+                            }finally {
+                                lock.unlock();
+                            }
                         }
                     }
                 }
@@ -248,6 +256,60 @@ public class NodeServer {
                 lock.unlock();
             }
         }
+
+        // Broadcast message from other nodes.
+        public void broadcast(String message){
+            String[] msgStrs = message.split(" ");
+            String jchAdd = msgStrs[2];
+            String msgCluster = msgStrs[3];
+            String msgContent = msgStrs[4];
+            System.out.println("?" + message);
+            lock.lock();
+            try{
+                System.out.println(clients);
+
+                ArrayList deleteList = new ArrayList();
+                // build message
+                MessageRep msgRep = MessageRep.newBuilder()
+                        .setJchannelAddress(jchAdd)
+                        .setContent(msgContent)
+                        .build();
+                Response rep = Response.newBuilder()
+                        .setMessageResponse(msgRep)
+                        .build();
+                ClusterMap clusterObj = (ClusterMap) jchannel.serviceMap.get(msgCluster);
+                System.out.println(clusterObj);
+                System.out.println(clusterObj.getMap());
+                System.out.println(clusterObj.getCreator());
+                for (String uuid : clients.keySet()){
+                    if (clusterObj.getMap().containsKey(uuid)){
+                        try{
+                            // send message to the client in the same cluster, which is connecting
+                            // to this node.
+                            clients.get(uuid).onNext(rep);
+                            System.out.println("Send message to a JChannel-Client, " + clusterObj.getMap().get(uuid));
+                        } catch (Exception e){
+                            e.printStackTrace();
+                            deleteList.add(uuid);
+                            System.out.println("Found a client not working. Delete it from .");
+                        }
+                    }
+                }
+                if(deleteList.size() != 0){
+                    for (int i = 0; i < deleteList.size(); i++) {
+                        clients.remove(deleteList.get(i));
+                        // add, remove the uuid and JChannel_address key-value from the cluster map
+                        clusterObj.getMap().remove(deleteList.get(i));
+                        System.out.println("Delete a client.");
+                    }
+                }
+                System.out.println("One broadcast for message.");
+                System.out.println(msgRep.toString());
+
+            } finally {
+                lock.unlock();
+            }
+        }
         // Broadcast the messages for updating addresses of servers
         protected void broadcastServers(String message){
             ArrayList deleteList = new ArrayList();
@@ -288,6 +350,102 @@ public class NodeServer {
             }
         }
 
+        public void unicast(MessageReq req){
+            String jchAdd = req.getJchannelAddress();
+            String msgContent = req.getContent();
+            String msgCluster = req.getCluster();
+            String msgDest = req.getDestination();
+            lock.lock();
+            try{
+                ArrayList deleteList = new ArrayList();
+                // build message
+                MessageRep msgRep = MessageRep.newBuilder()
+                        .setJchannelAddress(jchAdd)
+                        .setContent(msgContent)
+                        .build();
+                Response rep = Response.newBuilder()
+                        .setMessageResponse(msgRep)
+                        .build();
+                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(msgCluster);
+                for (String uuid : clients.keySet()){
+                    if (clusterObj.getMap().get(uuid).equals(msgDest)){
+                        try{
+                            // send message to the client in the same cluster, which is connecting
+                            // to this node.
+                            clients.get(uuid).onNext(rep);
+                            System.out.println("Unicast, send message to a JChannel-Client, " + clusterObj.getMap().get(uuid));
+                        } catch (Exception e){
+                            e.printStackTrace();
+                            deleteList.add(uuid);
+                            System.out.println("Found a client not working. Delete it from .");
+                        }
+                    }
+                }
+                if(deleteList.size() != 0){
+                    for (int i = 0; i < deleteList.size(); i++) {
+                        clients.remove(deleteList.get(i));
+                        // add, remove the uuid and JChannel_address key-value from the cluster map
+                        clusterObj.getMap().remove(deleteList.get(i));
+                        System.out.println("Delete a client.");
+                    }
+                }
+                System.out.println("One unicast for message.");
+                System.out.println(msgRep.toString());
+
+            } finally {
+                lock.unlock();
+            }
+
+        }
+
+        public void unicast(String message){
+            String[] msgStrs = message.split(" ");
+            String jchAdd = msgStrs[2];
+            String msgContent = msgStrs[4];
+            String msgCluster = msgStrs[3];
+            String msgDest =msgStrs[6];
+            lock.lock();
+            try{
+                ArrayList deleteList = new ArrayList();
+                // build message
+                MessageRep msgRep = MessageRep.newBuilder()
+                        .setJchannelAddress(jchAdd)
+                        .setContent(msgContent)
+                        .build();
+                Response rep = Response.newBuilder()
+                        .setMessageResponse(msgRep)
+                        .build();
+                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(msgCluster);
+                for (String uuid : clients.keySet()){
+                    if (clusterObj.getMap().get(uuid).equals(msgDest)){
+                        try{
+                            // send message to the client in the same cluster, which is connecting
+                            // to this node.
+                            clients.get(uuid).onNext(rep);
+                            System.out.println("Unicast, send message to a JChannel-Client, " + clusterObj.getMap().get(uuid));
+                        } catch (Exception e){
+                            e.printStackTrace();
+                            deleteList.add(uuid);
+                            System.out.println("Found a client not working. Delete it from .");
+                        }
+                    }
+                }
+                if(deleteList.size() != 0){
+                    for (int i = 0; i < deleteList.size(); i++) {
+                        clients.remove(deleteList.get(i));
+                        // add, remove the uuid and JChannel_address key-value from the cluster map
+                        clusterObj.getMap().remove(deleteList.get(i));
+                        System.out.println("Delete a client.");
+                    }
+                }
+                System.out.println("One unicast for message.");
+                System.out.println(msgRep.toString());
+
+            } finally {
+                lock.unlock();
+            }
+
+        }
         // Send the message to other JChannels
         // common message
         protected void forward(MessageReq req){
@@ -300,7 +458,6 @@ public class NodeServer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
 
         // share the cluster information to other nodes.
@@ -313,6 +470,45 @@ public class NodeServer {
                 this.jchannel.channel.send(msg);
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+
+        public void broadcastView(ViewRep videRep, String cluster){
+            lock.lock();
+            try{
+                ArrayList deleteList = new ArrayList();
+
+                Response rep = Response.newBuilder()
+                        .setViewResponse(videRep)
+                        .build();
+                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(cluster);
+                for (String uuid : clients.keySet()){
+                    if (clusterObj.getMap().containsKey(uuid)){
+                        try{
+                            // send message to the client in the same cluster, which is connecting
+                            // to this node.
+                            clients.get(uuid).onNext(rep);
+                            System.out.println("Send view to a JChannel-Client, " + clusterObj.getMap().get(uuid));
+                        } catch (Exception e){
+                            e.printStackTrace();
+                            deleteList.add(uuid);
+                            System.out.println("Found a client not working. Delete it from .");
+                        }
+                    }
+                }
+                if(deleteList.size() != 0){
+                    for (int i = 0; i < deleteList.size(); i++) {
+                        clients.remove(deleteList.get(i));
+                        // add, remove the uuid and JChannel_address key-value from the cluster map
+                        clusterObj.getMap().remove(deleteList.get(i));
+                        System.out.println("Delete a client.");
+                    }
+                }
+                System.out.println("One broadcast for view.");
+                System.out.println(rep.toString());
+
+            } finally {
+                lock.unlock();
             }
         }
     }

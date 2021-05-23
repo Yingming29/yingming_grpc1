@@ -26,7 +26,14 @@ message Response{
     ConnectRep connectResponse = 2;
     DisconnectRep disconnectResponse = 3;
     UpdateRep updateResponse = 4;
+    ViewRep viewResponse = 5;
   }
+}
+message ViewRep{
+  string creator = 1;
+  int32 viewNum = 2;
+  int32 size = 3;
+  string jchannel_addresses = 4;
 }
 // update the available server list
 message UpdateRep{

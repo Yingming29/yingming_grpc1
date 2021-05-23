@@ -16,6 +16,7 @@ public class Utils {
     public static String conDisReqToStrMsg(Request req){
         if(req.hasConnectRequest()){
             ConnectReq conReq = req.getConnectRequest();
+            // [Connect] uuid jchannel_address cluster timestamp
             String msg = "[Connect]" + " " + conReq.getSource() + " " + conReq.getJchannelAddress() +
                     " " + conReq.getCluster() + " " + conReq.getTimestamp();
             return msg;
@@ -33,6 +34,7 @@ public class Utils {
         if (req.getDestination().equals("") ||req.getDestination()==null){
             String msg = "[Broadcast]" + " " + req.getSource() + "" + req.getJchannelAddress() + " "
                     + req.getCluster() + " " + req.getContent() + " " + req.getTimestamp();
+            System.out.println(msg);
             return msg;
         } else{
             String msg = "[Unicast]" + " " + req.getSource() + "" + req.getJchannelAddress() + " "

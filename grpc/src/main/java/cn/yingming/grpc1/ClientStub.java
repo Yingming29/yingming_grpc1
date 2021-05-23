@@ -4,14 +4,10 @@ import io.grpc.jchannelRpc.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ClientStub {
-    private String uuid;
-    private String name;
-    private String jchannel_add;
-    private String cluster;
+
     private BiStreamClient client;
     // private AtomicBoolean haveCluster;  // whether connect to the cluster
     private ReentrantLock stubLock;
@@ -30,9 +26,9 @@ public class ClientStub {
             String[] strs = input.split(" ", 3);
             // set up time for msg, and build message
             MessageReq msgReq = MessageReq.newBuilder()
-                    .setSource(uuid)
-                    .setJchannelAddress(jchannel_add)
-                    .setCluster(cluster)
+                    .setSource(this.client.uuid)
+                    .setJchannelAddress(this.client.jchannel_address)
+                    .setCluster(this.client.cluster)
                     .setContent(strs[2])
                     .setTimestamp(dft.format(d))
                     .setDestination(strs[1])
@@ -42,9 +38,9 @@ public class ClientStub {
         } else if (input.equals("quit")) {
             // disconnect request
             DisconnectReq msgReq = DisconnectReq.newBuilder()
-                    .setSource(uuid)
-                    .setJchannelAddress(jchannel_add)
-                    .setCluster(cluster)
+                    .setSource(this.client.uuid)
+                    .setJchannelAddress(this.client.jchannel_address)
+                    .setCluster(this.client.cluster)
                     .setTimestamp(dft.format(d))
                     .build();
             Request req = Request.newBuilder()
@@ -53,9 +49,9 @@ public class ClientStub {
         } else{
             // common message for broadcast to its cluster.
             MessageReq msgReq = MessageReq.newBuilder()
-                    .setSource(uuid)
-                    .setJchannelAddress(jchannel_add)
-                    .setCluster(cluster)
+                    .setSource(this.client.uuid)
+                    .setJchannelAddress(this.client.jchannel_address)
+                    .setCluster(this.client.cluster)
                     .setContent(input)
                     .setTimestamp(dft.format(d))
                     .build();
@@ -76,11 +72,15 @@ public class ClientStub {
             client.update(response.getUpdateResponse().getAddresses());
         } else if (response.hasDisconnectResponse()){
             // null
+        } else if (response.hasViewResponse()){
+            ViewRep view = response.getViewResponse();
+            System.out.println("** View:[" + view.getCreator() + "|" + view.getViewNum() +
+                    "] (" + view.getSize() + ")" + view.getJchannelAddresses());
         }
     }
 
     public void printMsg(MessageRep response){
-        System.out.println("[JChannel] Receive message from "
+        System.out.println("[JChannel] "
                 + response.getJchannelAddress() + ":" + response.getContent());
     }
 
