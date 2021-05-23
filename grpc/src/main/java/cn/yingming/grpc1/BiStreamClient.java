@@ -258,6 +258,7 @@ public class BiStreamClient {
             if (client.msgList.size() != 0 && client.isWork.get()) {
                 // treat a input.
                 // tag, add a client stub treatment.
+                Request req = (Request) client.msgList.get(0);
                 requestSender.onNext(client.msgList.get(0));
                 client.mainLock.lock();
                 try {
@@ -265,6 +266,9 @@ public class BiStreamClient {
                     client.msgList.remove(0);
                 } finally {
                     client.mainLock.unlock();
+                }
+                if (req.hasDisconnectRequest()){
+                    System.exit(0);
                 }
             } else if (!client.isWork.get()) {
                 break;

@@ -82,18 +82,34 @@ public class NodeJChannel implements Receiver{
 
             } else if (msgStr.startsWith("[Broadcast]")){
                 System.out.println("[JChannel] Receive a shared send() request for broadcast to JChannl-Clients.");
+                System.out.println(this.serviceMap.get("test"));
+                ClusterMap m = (ClusterMap) this.serviceMap.get("test");
+                System.out.println(m.getMap());
+                this.service.broadcast(msgStr);
+                /*
                 lock.lock();
                 try{
                     this.service.broadcast(msgStr);
                 } finally {
                     lock.unlock();
                 }
+
+                 */
             } else if (msgStr.startsWith("[Unicast]")){
                 // When it receive an unicast message from other nodes, it will find the
                 // correct client for it, and send the message.
                 System.out.println("[JChannel] Receive a shared send() request for unicast to a JChannl-Client.");
                 this.service.unicast(msgStr);
             }
+        }
+    }
+    public void broadcastCluster(String msgStr){
+        lock.lock();
+        try{
+            String[] strs = msgStr.split(" ");
+            ClusterMap clusterObj = (ClusterMap) serviceMap.get(strs[3]);
+        } finally {
+            lock.unlock();
         }
     }
 

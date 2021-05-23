@@ -32,14 +32,13 @@ public class Utils {
     }
     public static String msgReqToMsgStr(MessageReq req){
         if (req.getDestination().equals("") ||req.getDestination()==null){
-            String msg = "[Broadcast]" + " " + req.getSource() + "" + req.getJchannelAddress() + " "
-                    + req.getCluster() + " " + req.getContent() + " " + req.getTimestamp();
+            String msg = "[Broadcast]" + " " + req.getSource() + " " + req.getJchannelAddress() + " "
+                    + req.getCluster() + " " + req.getContent();
             System.out.println(msg);
             return msg;
         } else{
-            String msg = "[Unicast]" + " " + req.getSource() + "" + req.getJchannelAddress() + " "
-                    + req.getCluster() + " " + req.getContent() + " " + req.getTimestamp() + " "
-                    + req.getDestination();
+            String msg = "[Unicast]" + " " + req.getSource() + " " + req.getJchannelAddress() + " "
+                    + req.getCluster() + " " + req.getContent()  + " " + req.getDestination();
             return msg;
         }
     }

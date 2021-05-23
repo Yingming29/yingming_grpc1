@@ -35,7 +35,7 @@ public class ClientStub {
                     .build();
             Request req = Request.newBuilder().setMessageRequest(msgReq).build();
             return req;
-        } else if (input.equals("quit")) {
+        } else if (input.equals("disconnect")) {
             // disconnect request
             DisconnectReq msgReq = DisconnectReq.newBuilder()
                     .setSource(this.client.uuid)
@@ -46,6 +46,7 @@ public class ClientStub {
             Request req = Request.newBuilder()
                     .setDisconnectRequest(msgReq).build();
             return req;
+
         } else{
             // common message for broadcast to its cluster.
             MessageReq msgReq = MessageReq.newBuilder()

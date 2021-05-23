@@ -259,33 +259,26 @@ public class NodeServer {
 
         // Broadcast message from other nodes.
         public void broadcast(String message){
-            String[] msgStrs = message.split(" ");
-            String jchAdd = msgStrs[2];
-            String msgCluster = msgStrs[3];
-            String msgContent = msgStrs[4];
-            System.out.println("?" + message);
             lock.lock();
             try{
-                System.out.println(clients);
-
                 ArrayList deleteList = new ArrayList();
-                // build message
+                String[] strs = message.split(" ");
+                String clusterStr = strs[3];
+                String contentStr = strs[4];
+                String senderStr = strs[2];
                 MessageRep msgRep = MessageRep.newBuilder()
-                        .setJchannelAddress(jchAdd)
-                        .setContent(msgContent)
+                        .setJchannelAddress(senderStr)
+                        .setContent(contentStr)
                         .build();
                 Response rep = Response.newBuilder()
                         .setMessageResponse(msgRep)
                         .build();
-                ClusterMap clusterObj = (ClusterMap) jchannel.serviceMap.get(msgCluster);
-                System.out.println(clusterObj);
-                System.out.println(clusterObj.getMap());
-                System.out.println(clusterObj.getCreator());
+
+                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(clusterStr);
                 for (String uuid : clients.keySet()){
+                    System.out.println(uuid);
                     if (clusterObj.getMap().containsKey(uuid)){
                         try{
-                            // send message to the client in the same cluster, which is connecting
-                            // to this node.
                             clients.get(uuid).onNext(rep);
                             System.out.println("Send message to a JChannel-Client, " + clusterObj.getMap().get(uuid));
                         } catch (Exception e){
@@ -304,12 +297,13 @@ public class NodeServer {
                     }
                 }
                 System.out.println("One broadcast for message.");
-                System.out.println(msgRep.toString());
+                System.out.println(rep.toString());
 
             } finally {
                 lock.unlock();
             }
         }
+
         // Broadcast the messages for updating addresses of servers
         protected void broadcastServers(String message){
             ArrayList deleteList = new ArrayList();
