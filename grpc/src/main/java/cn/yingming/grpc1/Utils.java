@@ -51,6 +51,7 @@ public class Utils {
             objStream = new ObjectOutputStream(bytesStream);
             objStream.writeObject(obj);
             byte[] bytes = bytesStream.toByteArray();
+            System.out.println("Serialize the cluster inf successfully.");
             return bytes;
         } catch (IOException e) {
             e.printStackTrace();
@@ -66,12 +67,11 @@ public class Utils {
     }
 
     public static Object unserializeClusterInf(byte[] bytes){
-        System.out.println("uns1");
         ByteArrayInputStream bytesStream = null;
         try{
             bytesStream = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(bytesStream);
-            System.out.println("uns");
+            System.out.println("Unserialize");
             return ois.readObject();
         } catch (IOException e){
             e.printStackTrace();

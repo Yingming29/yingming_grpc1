@@ -3,6 +3,7 @@ package cn.yingming.grpc1;
 import io.grpc.jchannelRpc.ViewRep;
 import org.apache.commons.collections.ListUtils;
 import org.jgroups.*;
+import org.jgroups.util.ByteArray;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +41,38 @@ public class NodeJChannel implements Receiver{
 
     @Override
     public void receive(Message msg) {
+        System.out.println("Receive!!!");
+        System.out.println(msg);
+        System.out.println(msg.getObject().toString());
+        System.out.println(msg.getPayload().toString());
+        if (msg.getObject() instanceof String ){
+            System.out.println("call receiveString");
+            receiveString(msg);
+        } else {
+            System.out.println("call receiveByte");
+            System.out.println("call receiveByte");
+            System.out.println("call receiveByte");
+            System.out.println("call receiveByte");
+            receiveByte(msg);
+        }
+    }
+
+    public void receiveByte(Message msg){
+        Object obj =  Utils.unserializeClusterInf(msg.getPayload());
+        System.out.println("receivebyte");
+        if (obj instanceof Map){
+            System.out.println("Receive the cluster information from node " + msg.getSrc());
+            ConcurrentHashMap m = (ConcurrentHashMap) obj;
+            lock.lock();
+            try{
+                this.serviceMap = m;
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    public void receiveString(Message msg){
         String msgStr = msg.getObject();
         String newMsg = null;
         // some types of broadcast messages, update address or broadcast the common message
@@ -82,8 +115,6 @@ public class NodeJChannel implements Receiver{
 
             } else if (msgStr.startsWith("[Broadcast]")){
                 System.out.println("[JChannel] Receive a shared send() request for broadcast to JChannl-Clients.");
-                System.out.println(this.serviceMap.get("test"));
-                ClusterMap m = (ClusterMap) this.serviceMap.get("test");
                 lock.lock();
                 try{
                     this.service.broadcast(msgStr);
@@ -95,16 +126,22 @@ public class NodeJChannel implements Receiver{
                 // correct client for it, and send the message.
                 System.out.println("[JChannel] Receive a shared send() request for unicast to a JChannl-Client.");
                 this.service.unicast(msgStr);
+            } else if (msgStr.equals("ClusterInformation")){
+                // send the current
+                System.out.println("Receive a request for the current " +
+                        "JChannel-client cluster information from a new node member: " + msg.getSrc());
+                lock.lock();
+                try{
+                    byte[] b = Utils.serializeClusterInf(this.serviceMap);
+                    System.out.println(b);
+                    Message msg2 = new ObjectMessage(msg.getSrc(), b);
+                    this.channel.send(msg2);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    this.lock.unlock();
+                }
             }
-        }
-    }
-    public void broadcastCluster(String msgStr){
-        lock.lock();
-        try{
-            String[] strs = msgStr.split(" ");
-            ClusterMap clusterObj = (ClusterMap) serviceMap.get(strs[3]);
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -135,8 +172,25 @@ public class NodeJChannel implements Receiver{
         List currentView = new_view.getMembers();
         List currentNodesList = new ArrayList<>(this.nodesMap.keySet());
         compareNodes(currentView, currentNodesList);
+        checkClusterMap(new_view);
     }
 
+    public void checkClusterMap(View view){
+        // this first startup
+        // whether is the coordinator
+        if (this.serviceMap == null){
+            if (view.getMembers().get(0).toString().equals(this.channel.getAddress().toString())){
+                System.out.println("This is the coordinator");
+            } else {
+                String msg = "ClusterInformation";
+                try{
+                    this.channel.send(view.getMembers().get(0), msg);
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     public void compareNodes(List currentView, List currentNodesList){
         // add node
@@ -177,52 +231,6 @@ public class NodeJChannel implements Receiver{
             e.printStackTrace();
         }
     }
-
-    class ClusterMap{
-        public ConcurrentHashMap<String, String> map;
-        public int viewNum;
-        public String creator;
-        public ReentrantLock lock;
-        public ClusterMap(String creator){
-            this.map = new ConcurrentHashMap<String, String>();
-            this.viewNum = 0;
-            this.creator = creator;
-            this.lock = new ReentrantLock();
-        }
-        public ConcurrentHashMap getMap(){
-            return map;
-        }
-        // add the methods for view
-        public int getViewNum(){
-            return viewNum;
-        }
-        public void addViewNum(){
-            viewNum ++;
-        }
-        public String getCreator(){ return creator;}
-        public ViewRep generateView(){
-            List clientList = new ArrayList();
-            ViewRep rep = null;
-            this.lock.lock();
-            try{
-                for (String eachUuid:this.map.keySet()) {
-                    String addStr = this.map.get(eachUuid);
-                    clientList.add(addStr);
-                }
-                rep = ViewRep.newBuilder()
-                        .setCreator(getCreator())
-                        .setViewNum(getViewNum())
-                        .setSize(clientList.size())
-                        .setJchannelAddresses(clientList.toString())
-                        .build();
-                addViewNum();
-            } finally {
-                this.lock.unlock();
-            }
-            return rep;
-        }
-    }
-
     // add view action and forward
     public void connectCluster(String cluster, String JChannel_address, String uuid){
         lock.lock();
@@ -243,6 +251,8 @@ public class NodeJChannel implements Receiver{
             ClusterMap clusterObj = (ClusterMap) serviceMap.get(cluster);
             ViewRep viewRep= clusterObj.generateView();
             this.service.broadcastView(viewRep, cluster);
+        }catch (Exception e){
+            e.printStackTrace();
         } finally {
             lock.unlock();
         }

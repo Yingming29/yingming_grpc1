@@ -235,7 +235,7 @@ public class NodeServer {
                 Response rep = Response.newBuilder()
                         .setMessageResponse(msgRep)
                         .build();
-                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(req.getCluster());
+                ClusterMap clusterObj = (ClusterMap) jchannel.serviceMap.get(req.getCluster());
                 for (String uuid : clients.keySet()){
                     if (clusterObj.getMap().containsKey(uuid)){
                         try{
@@ -283,7 +283,7 @@ public class NodeServer {
                         .setMessageResponse(msgRep)
                         .build();
 
-                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(clusterStr);
+                ClusterMap clusterObj = (ClusterMap) jchannel.serviceMap.get(clusterStr);
                 for (String uuid : clients.keySet()){
                     System.out.println(uuid);
                     if (clusterObj.getMap().containsKey(uuid)){
@@ -368,7 +368,7 @@ public class NodeServer {
                 Response rep = Response.newBuilder()
                         .setMessageResponse(msgRep)
                         .build();
-                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(msgCluster);
+                ClusterMap clusterObj = (ClusterMap) jchannel.serviceMap.get(msgCluster);
                 for (String uuid : clients.keySet()){
                     if (clusterObj.getMap().get(uuid).equals(msgDest)){
                         try{
@@ -417,7 +417,7 @@ public class NodeServer {
                 Response rep = Response.newBuilder()
                         .setMessageResponse(msgRep)
                         .build();
-                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(msgCluster);
+                ClusterMap clusterObj = (ClusterMap) jchannel.serviceMap.get(msgCluster);
                 for (String uuid : clients.keySet()){
                     if (clusterObj.getMap().get(uuid).equals(msgDest)){
                         try{
@@ -483,7 +483,7 @@ public class NodeServer {
                 Response rep = Response.newBuilder()
                         .setViewResponse(videRep)
                         .build();
-                NodeJChannel.ClusterMap clusterObj = (NodeJChannel.ClusterMap) jchannel.serviceMap.get(cluster);
+                ClusterMap clusterObj = (ClusterMap) jchannel.serviceMap.get(cluster);
                 for (String uuid : clients.keySet()){
                     if (clusterObj.getMap().containsKey(uuid)){
                         try{

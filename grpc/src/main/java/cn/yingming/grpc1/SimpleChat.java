@@ -39,11 +39,19 @@ public class SimpleChat implements Receiver{
 		String line = msg.getSrc() + ":" + msg.getObject();
 		System.out.println("Before:" + line);
 		try {
+			/*
 			Request req = Request.parseFrom((byte[]) msg.getPayload());
 			System.out.println("After:" + req);
 			ConnectReq req2 = req.getConnectRequest();
 			System.out.println(req2);
-		} catch (InvalidProtocolBufferException e) {
+			 */
+			Object obj =  Utils.unserializeClusterInf((byte[]) msg.getPayload());
+			System.out.println(obj);
+			System.out.println("-------");
+			ClusterMap m2 = (ClusterMap) obj;
+			System.out.println(m2.getCreator());
+			System.out.println(m2.getMap());
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
@@ -79,6 +87,7 @@ public class SimpleChat implements Receiver{
 				if (line.startsWith("quit") || line.startsWith("exit")) {
 					break;
 				}
+				/*
 				ConnectReq crq = ConnectReq.newBuilder()
 						.setSource("source")
 						.setCluster(line)
@@ -86,7 +95,12 @@ public class SimpleChat implements Receiver{
 				Request req = Request.newBuilder()
 						.setConnectRequest(crq)
 						.build();
-				byte[] b =  req.toByteArray();
+						byte[] b =  req.toByteArray();
+				*/
+				ClusterMap m = new ClusterMap("TestCreator");
+				m.getMap().put("Testuuid", "TestAddress");
+				byte[] b = Utils.serializeClusterInf(m);
+
 				// destination address is null, send msg to everyone in the cluster.
 				Message msg = new ObjectMessage(null, b);
 				channel.send(msg);

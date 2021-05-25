@@ -7,12 +7,19 @@ public class Test {
         ClusterMap m = new ClusterMap("TestCreator");
         m.getMap().put("Testuuid", "TestAddress");
         byte[] b = Utils.serializeClusterInf(m);
+        String a = "abvc";
+
         System.out.println(b);
         Object obj =  Utils.unserializeClusterInf(b);
         System.out.println(obj);
+        System.out.println(obj.getClass());
         System.out.println("-------");
         ClusterMap m2 = (ClusterMap) obj;
         System.out.println(m2.getCreator());
         System.out.println(m2.getMap());
+
+
+        System.out.println(b.getClass());
+        System.out.println(a.getClass());
     }
 }
