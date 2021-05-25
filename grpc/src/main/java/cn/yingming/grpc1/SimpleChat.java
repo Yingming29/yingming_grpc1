@@ -9,6 +9,9 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+import io.grpc.jchannelRpc.ConnectReq;
+import io.grpc.jchannelRpc.Request;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ObjectMessage;
@@ -34,7 +37,16 @@ public class SimpleChat implements Receiver{
 	@Override
 	public void receive(Message msg) {
 		String line = msg.getSrc() + ":" + msg.getObject();
-		System.out.println(line);
+		System.out.println("Before:" + line);
+		try {
+			Request req = Request.parseFrom((byte[]) msg.getPayload());
+			System.out.println("After:" + req);
+			ConnectReq req2 = req.getConnectRequest();
+			System.out.println(req2);
+		} catch (InvalidProtocolBufferException e) {
+			e.printStackTrace();
+		}
+
 		synchronized (state) {
 			state.add(line);
 		}
@@ -67,9 +79,16 @@ public class SimpleChat implements Receiver{
 				if (line.startsWith("quit") || line.startsWith("exit")) {
 					break;
 				}
-				line = "[" + user_name + "]" + line;
+				ConnectReq crq = ConnectReq.newBuilder()
+						.setSource("source")
+						.setCluster(line)
+						.build();
+				Request req = Request.newBuilder()
+						.setConnectRequest(crq)
+						.build();
+				byte[] b =  req.toByteArray();
 				// destination address is null, send msg to everyone in the cluster.
-				Message msg = new ObjectMessage(null, line);
+				Message msg = new ObjectMessage(null, b);
 				channel.send(msg);
 			} catch (Exception e) {
 				// TODO: handle exception

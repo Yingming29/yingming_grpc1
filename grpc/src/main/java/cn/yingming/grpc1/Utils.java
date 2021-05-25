@@ -5,8 +5,7 @@ import io.grpc.jchannelRpc.DisconnectReq;
 import io.grpc.jchannelRpc.MessageReq;
 import io.grpc.jchannelRpc.Request;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 public class Utils {
 
@@ -38,8 +37,53 @@ public class Utils {
             return msg;
         } else{
             String msg = "[Unicast]" + " " + req.getSource() + " " + req.getJchannelAddress() + " "
-                    + req.getCluster() + " " + req.getContent()  + " " + req.getDestination();
+                    + req.getCluster() + " " + req.getDestination()  + " " + req.getContent();
             return msg;
         }
+    }
+
+    public static byte[] serializeClusterInf(Object obj){
+        ObjectOutputStream objStream = null;
+        ByteArrayOutputStream bytesStream = null;
+
+        bytesStream = new ByteArrayOutputStream();
+        try{
+            objStream = new ObjectOutputStream(bytesStream);
+            objStream.writeObject(obj);
+            byte[] bytes = bytesStream.toByteArray();
+            return bytes;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try{
+                objStream.close();
+                bytesStream.close();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    public static Object unserializeClusterInf(byte[] bytes){
+        System.out.println("uns1");
+        ByteArrayInputStream bytesStream = null;
+        try{
+            bytesStream = new ByteArrayInputStream(bytes);
+            ObjectInputStream ois = new ObjectInputStream(bytesStream);
+            System.out.println("uns");
+            return ois.readObject();
+        } catch (IOException e){
+            e.printStackTrace();
+        } catch (ClassNotFoundException e){
+            e.printStackTrace();
+        } finally {
+            try{
+                bytesStream.close();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 }

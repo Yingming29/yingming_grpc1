@@ -22,7 +22,7 @@ public class ClientStub {
         Date d = new Date();
         SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
         // single send request
-        if (input.startsWith("[TO]")){
+        if (input.startsWith("TO")){
             String[] strs = input.split(" ", 3);
             // set up time for msg, and build message
             MessageReq msgReq = MessageReq.newBuilder()

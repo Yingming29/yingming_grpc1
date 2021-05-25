@@ -91,55 +91,64 @@ public class NodeServer {
             return new StreamObserver<Request>() {
                 @Override
                 public void onNext(Request req) {
+                    /* Condition1
+                       Receive the connect() request.
+                     */
                     if (req.hasConnectRequest()){
-                        // connect()
                         System.out.println(req.getConnectRequest().getJchannelAddress() + "(" +
                                 req.getConnectRequest().getSource() + ") joins the cluster, " +
                                 req.getConnectRequest().getCluster());
                         // Store the responseObserver of joining client.
                         join(req.getConnectRequest(), responseObserver);
                         share(req);
-
+                    /*  Condition2
+                        Receive the disconnect() request.
+                     */
                     } else if (req.hasDisconnectRequest()){
-                        // disconnect()
                         System.out.println("The client sends a disconnect() request. "
                                 + req.getDisconnectRequest().getJchannelAddress() + "("
                                 + req.getDisconnectRequest().getCluster() + ")");
                         // remove responseObserver for the disconnect()
                         lock.lock();
                         try {
-                            // remove the client responseObserver
+                            // 1. remove the client responseObserver
                             for (String uuid : clients.keySet()) {
                                 if (uuid.equals(req.getDisconnectRequest().getSource())){
                                     clients.remove(uuid);
                                 }
                             }
-                            // remove the client from its cluster
+                            // 2. remove the client from its cluster information
                             jchannel.disconnectCluster(req.getDisconnectRequest().getCluster(),
                                     req.getDisconnectRequest().getJchannelAddress(),
                                     req.getDisconnectRequest().getSource());
                         } finally {
                             lock.unlock();
                         }
+                        // also notify other nodes to delete it
                         share(req);
 
                     } else{
-                        // treat the common message
+                        /* Condition3
+                           Receive the common message, send() request.
+                           Two types: broadcast ot unicast
+                         */
                         MessageReq msgReq = req.getMessageRequest();
                         // send() messages for broadcast and unicast in the cluster for clients
                         System.out.println("[gRPC] " + msgReq.getJchannelAddress() + " sends message: " + msgReq.getContent()
                                 + " at " + msgReq.getTimestamp());
+                        // Type1, broadcast
                         if (msgReq.getDestination().equals(null)||msgReq.getDestination().equals("")){
                             System.out.println("Broadcast in the cluster " + msgReq.getCluster());
                             lock.lock();
                             try{
                                 // send msg to its gRPC clients
                                 broadcast(msgReq);
-                                // forward msg to other JChannels
+                                // forward msg to other nodes
                                 forward(msgReq);
                             }finally {
                                 lock.unlock();
                             }
+                        // Type2, unicast
                         } else{
                             System.out.println("Unicast in the cluster " + msgReq.getCluster() + " to " + msgReq.getDestination());
                             lock.lock();
@@ -262,7 +271,7 @@ public class NodeServer {
             lock.lock();
             try{
                 ArrayList deleteList = new ArrayList();
-                String[] strs = message.split(" ");
+                String[] strs = message.split(" ", 5);
                 String clusterStr = strs[3];
                 String contentStr = strs[4];
                 String senderStr = strs[2];
@@ -308,7 +317,6 @@ public class NodeServer {
         protected void broadcastServers(String message){
             ArrayList deleteList = new ArrayList();
             // set the message (from other nodes) which is broadcast to all clients.
-            String[] msg = message.split("\t");
 
             UpdateRep updateMsg = UpdateRep.newBuilder()
                     .setAddresses(message)
@@ -393,11 +401,11 @@ public class NodeServer {
         }
 
         public void unicast(String message){
-            String[] msgStrs = message.split(" ");
+            String[] msgStrs = message.split(" ", 6);
             String jchAdd = msgStrs[2];
-            String msgContent = msgStrs[4];
+            String msgContent = msgStrs[5];
             String msgCluster = msgStrs[3];
-            String msgDest =msgStrs[6];
+            String msgDest =msgStrs[4];
             lock.lock();
             try{
                 ArrayList deleteList = new ArrayList();

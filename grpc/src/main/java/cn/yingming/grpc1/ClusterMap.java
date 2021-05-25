@@ -2,12 +2,13 @@ package cn.yingming.grpc1;
 
 import io.grpc.jchannelRpc.ViewRep;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ClusterMap {
+public class ClusterMap implements Serializable {
     public ConcurrentHashMap<String, String> map;
     public int viewNum;
     public String creator;
