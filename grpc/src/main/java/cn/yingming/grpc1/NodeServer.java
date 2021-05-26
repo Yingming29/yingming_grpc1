@@ -167,8 +167,16 @@ public class NodeServer {
                 @Override
                 public void onError(Throwable throwable) {
 
-                    System.out.println("onError:" + throwable.getMessage());
+                    System.out.println("onError:" + throwable.getMessage() + " Remove it from the node.");
                     System.out.println(responseObserver);
+                    String uuid = removeClient(responseObserver);
+                    String line = "[DisconnectNotGrace] " + uuid;
+                    Message msg = new ObjectMessage(null, line);
+                    try {
+                        jchannel.channel.send(msg);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
@@ -176,6 +184,24 @@ public class NodeServer {
                     responseObserver.onCompleted();
                 }
             };
+        }
+        protected String removeClient(StreamObserver responseObserver){
+
+            this.lock.lock();
+            try{
+                for (String uuid:clients.keySet()) {
+                    if (clients.get(uuid) == responseObserver){
+                        clients.remove(uuid);
+                        System.out.println("Found the error client, remove it from clients Map.");
+                        jchannel.disconnectClusterNoGraceful(uuid);
+                        return uuid;
+                    }
+
+                }
+            } finally {
+                this.lock.unlock();
+            }
+            return null;
         }
 
         /* The unary rpc, the response of ask rpc call method for the try connection from clients.

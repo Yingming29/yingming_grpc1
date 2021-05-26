@@ -41,17 +41,10 @@ public class NodeJChannel implements Receiver{
 
     @Override
     public void receive(Message msg) {
-        System.out.println("Receive!!!");
-        System.out.println(msg);
-        System.out.println(msg.getObject().toString());
-        System.out.println(msg.getPayload().toString());
         if (msg.getObject() instanceof String ){
             System.out.println("call receiveString");
             receiveString(msg);
         } else {
-            System.out.println("call receiveByte");
-            System.out.println("call receiveByte");
-            System.out.println("call receiveByte");
             System.out.println("call receiveByte");
             receiveByte(msg);
         }
@@ -59,9 +52,8 @@ public class NodeJChannel implements Receiver{
 
     public void receiveByte(Message msg){
         Object obj =  Utils.unserializeClusterInf(msg.getPayload());
-        System.out.println("receivebyte");
         if (obj instanceof Map){
-            System.out.println("Receive the cluster information from node " + msg.getSrc());
+            System.out.println("Receive the cluster information from node(coordinator) " + msg.getSrc());
             ConcurrentHashMap m = (ConcurrentHashMap) obj;
             lock.lock();
             try{
@@ -92,7 +84,7 @@ public class NodeJChannel implements Receiver{
                 } else{
                     // condition 1.2 changed server list, update list and broadcast update servers
                     this.nodesMap.put(msg.getSrc(), strs[1]);
-                    System.out.println("Receive a confirmation from a node, update map.");
+                    System.out.println("[JChannel] Receive a confirmation from a node, update server map.");
                     System.out.println("After receiving: " + this.nodesMap);
                     String str = generateAddMsg();
                     newMsg = str;
@@ -141,6 +133,10 @@ public class NodeJChannel implements Receiver{
                 } finally {
                     this.lock.unlock();
                 }
+            } else if (msgStr.startsWith("[DisconnectNotGrace]")){
+                String[] strs = msgStr.split(" ");
+                System.out.println("[JChannel] Receive a shared not graceful disconnect() request for updating th cluster information.");
+                disconnectClusterNoGraceful(strs[1]);
             }
         }
     }
@@ -180,10 +176,11 @@ public class NodeJChannel implements Receiver{
         // whether is the coordinator
         if (this.serviceMap == null){
             if (view.getMembers().get(0).toString().equals(this.channel.getAddress().toString())){
-                System.out.println("This is the coordinator");
+                System.out.println("This is the coordinator of the node cluster.");
             } else {
                 String msg = "ClusterInformation";
                 try{
+                    // send the request to get the current inf of client-jchannel cluster
                     this.channel.send(view.getMembers().get(0), msg);
                 } catch (Exception e){
                     e.printStackTrace();
@@ -275,6 +272,28 @@ public class NodeJChannel implements Receiver{
         } finally {
             lock.unlock();
         }
+    }
+
+    public void disconnectClusterNoGraceful(String uuid){
+        this.lock.lock();
+        try{
+            for (Object cluster: serviceMap.keySet()) {
+                String clusterName = cluster.toString();
+                ClusterMap clusterMap = (ClusterMap) serviceMap.get(clusterName);
+                for (Object eachUuid:clusterMap.getMap().keySet()) {
+                    if (uuid.equals(eachUuid.toString())){
+                        System.out.println("Remove the JChannel-client from its cluster.");
+                        clusterMap.getMap().remove(uuid);
+                        ClusterMap clusterObj = (ClusterMap) serviceMap.get(clusterName);
+                        ViewRep viewRep= clusterObj.generateView();
+                        this.service.broadcastView(viewRep, clusterName);
+                    }
+                }
+            }
+        } finally {
+            this.lock.unlock();
+        }
+
     }
 
 }
