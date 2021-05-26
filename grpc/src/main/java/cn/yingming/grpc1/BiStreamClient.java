@@ -32,6 +32,7 @@ public class BiStreamClient {
     public String jchannel_address;
     public String cluster;
     private ClientStub clientStub;
+    public AtomicBoolean down;
 
     //
     private JChannelsServiceGrpc.JChannelsServiceBlockingStub JchannelBlockingStub;
@@ -51,6 +52,7 @@ public class BiStreamClient {
         this.msgList = new ArrayList();
         this.serverList = new ArrayList();
         this.clientStub = null;
+        this.down = new AtomicBoolean(true);
     }
 
     private StreamObserver startGrpc(AtomicBoolean isWork) {
@@ -267,11 +269,16 @@ public class BiStreamClient {
                 } finally {
                     client.mainLock.unlock();
                 }
-                if (req.hasDisconnectRequest()){
-                    System.exit(0);
-                }
+
             } else if (!client.isWork.get()) {
                 break;
+            } else if (!client.down.get()){
+                System.out.println("End");
+                try{
+                    System.exit(0);
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
             }
         }
     }

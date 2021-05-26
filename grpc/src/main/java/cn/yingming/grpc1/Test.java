@@ -1,9 +1,12 @@
 package cn.yingming.grpc1;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Test {
     public static void main(String[] args) {
+        /*
         ClusterMap m = new ClusterMap("TestCreator");
         m.getMap().put("Testuuid", "TestAddress");
         byte[] b = Utils.serializeClusterInf(m);
@@ -21,5 +24,14 @@ public class Test {
 
         System.out.println(b.getClass());
         System.out.println(a.getClass());
+
+         */
+        List l = new ArrayList<String>();
+        l.add("312312312321");
+        l.add("123");
+        l.add("abc");
+        l.add("12312312312");
+        System.out.println(l);
+        System.out.println(l.indexOf("123"));
     }
 }

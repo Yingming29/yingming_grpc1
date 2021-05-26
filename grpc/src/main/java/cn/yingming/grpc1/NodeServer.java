@@ -128,6 +128,7 @@ public class NodeServer {
                         }
                         // also notify other nodes to delete it
                         forwardMsg(req);
+                        onCompleted();
                     } else{
                         /* Condition3
                            Receive the common message, send() request.
@@ -173,6 +174,7 @@ public class NodeServer {
                     String uuid = removeClient(responseObserver);
                     String line = "[DisconnectNotGrace] " + uuid;
                     Message msg = new ObjectMessage(null, line);
+                    msg.setFlagIfAbsent(Message.TransientFlag.DONT_LOOPBACK);
                     try {
                         jchannel.channel.send(msg);
                     } catch (Exception e) {
@@ -312,11 +314,20 @@ public class NodeServer {
                 Response rep = Response.newBuilder()
                         .setMessageResponse(msgRep)
                         .build();
+
                 ClusterMap clusterObj = (ClusterMap) jchannel.serviceMap.get(msgCluster);
+                System.out.println("----------");
+                System.out.println(clusterObj.getMap());
+                System.out.println(msgDest);
+                System.out.println("----------");
                 for (String uuid : clients.keySet()){
-                    if (clusterObj.getMap().get(uuid).equals(msgDest)){
-                        clients.get(uuid).onNext(rep);
-                        System.out.println("[gRPC] Unicast, send message to a JChannel-Client, " + clusterObj.getMap().get(uuid));
+                    if (clusterObj.getMap().containsKey(uuid)){
+                        if (clusterObj.getMap().get(uuid).equals(msgDest)){
+                            clients.get(uuid).onNext(rep);
+                            System.out.println("[gRPC] Send message to a JChannel-Client, " + clusterObj.getMap().get(uuid));
+                        } else{
+                            System.out.println("error");
+                        }
                     }
                 }
                 System.out.println("One unicast for message successfully.");

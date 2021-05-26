@@ -64,7 +64,6 @@ public class ClientStub {
     public void judgeResponse(Response response){
 
         if (response.hasConnectResponse()){
-            // delete?
             System.out.println("Get Connect() response.");
         } else if (response.hasMessageResponse()){
             // get message from server
@@ -72,7 +71,13 @@ public class ClientStub {
         } else if (response.hasUpdateResponse()){
             client.update(response.getUpdateResponse().getAddresses());
         } else if (response.hasDisconnectResponse()){
-            // null
+            stubLock.lock();
+            try{
+                client.down.set(false);
+            } finally {
+                stubLock.unlock();
+            }
+
         } else if (response.hasViewResponse()){
             ViewRep view = response.getViewResponse();
             System.out.println("** View:[" + view.getCreator() + "|" + view.getViewNum() +
