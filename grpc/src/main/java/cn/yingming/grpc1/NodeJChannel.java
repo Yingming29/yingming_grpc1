@@ -1,9 +1,8 @@
 package cn.yingming.grpc1;
 
-import io.grpc.jchannelRpc.ViewRep;
+import io.grpc.jchannelRpc.*;
 import org.apache.commons.collections.ListUtils;
 import org.jgroups.*;
-import org.jgroups.util.ByteArray;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,22 +35,23 @@ public class NodeJChannel implements Receiver{
         this.serviceMap = new ConcurrentHashMap<String, ClusterMap>();
         // put itself into available nodes list
         this.nodesMap.put(this.channel.getAddress(), this.grpcAddress);
-        System.out.println(this.nodesMap);
+        System.out.println("[JChannel] The current nodes in node cluster: " + this.nodesMap);
     }
 
     @Override
     public void receive(Message msg) {
         if (msg.getObject() instanceof String ){
-            System.out.println("call receiveString");
+            // System.out.println("call receiveString");
             receiveString(msg);
         } else {
-            System.out.println("call receiveByte");
+            // System.out.println("call receiveByte");
             receiveByte(msg);
         }
     }
 
     public void receiveByte(Message msg){
         Object obj =  Utils.unserializeClusterInf(msg.getPayload());
+
         if (obj instanceof Map){
             System.out.println("Receive the cluster information from node(coordinator) " + msg.getSrc());
             ConcurrentHashMap m = (ConcurrentHashMap) obj;
@@ -60,6 +60,36 @@ public class NodeJChannel implements Receiver{
                 this.serviceMap = m;
             } finally {
                 lock.unlock();
+            }
+        } else if (obj == null){
+            Request req = null;
+            try{
+                req = Request.parseFrom((byte[]) msg.getPayload());
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+            if (req.hasConnectRequest()){
+                ConnectReq conReq = req.getConnectRequest();
+                System.out.println("[JChannel] Receive a shared connect() request for updating th cluster information.");
+                connectCluster(conReq.getCluster(), conReq.getJchannelAddress(), conReq.getSource());
+            } else if (req.hasDisconnectRequest()){
+                DisconnectReq disReq = req.getDisconnectRequest();
+                System.out.println("[JChannel] Receive a shared disconnect() request for updating th cluster information.");
+                disconnectCluster(disReq.getCluster(), disReq.getJchannelAddress(), disReq.getSource());
+            } else if (req.hasMessageRequest()){
+                MessageReq msgReq = req.getMessageRequest();
+                if (msgReq.getDestination().equals(null)||msgReq.getDestination().equals("")){
+                    System.out.println("[JChannel] Receive a shared send() request for broadcast to JChannl-Clients.");
+                    lock.lock();
+                    try{
+                        this.service.broadcast(msgReq);
+                    } finally {
+                        lock.unlock();
+                    }
+                } else {
+                    System.out.println("[JChannel] Receive a shared send() request for unicast to a JChannl-Client.");
+                    this.service.unicast(msgReq);
+                }
             }
         }
     }
@@ -80,44 +110,17 @@ public class NodeJChannel implements Receiver{
                 }
                 // condition 1.1, no change
                 if (same){
-                    System.out.println("Receive a confirmation from a node, but no change.");
+                    System.out.println("[JChannel] Receive a confirmation from a node, but no change.");
                 } else{
                     // condition 1.2 changed server list, update list and broadcast update servers
                     this.nodesMap.put(msg.getSrc(), strs[1]);
                     System.out.println("[JChannel] Receive a confirmation from a node, update server map.");
-                    System.out.println("After receiving: " + this.nodesMap);
+                    System.out.println("[JChannel] After updating: " + this.nodesMap);
                     String str = generateAddMsg();
                     newMsg = str;
                     this.service.broadcastServers(newMsg);
                 }
                 // condition 2, connect() request
-            } else if (msgStr.startsWith("[Connect]")){
-                // Treat the shared connect() request from other nodes for cluster information.
-                // a. Add the client to its cluster map
-                String[] strs = msgStr.split(" ");
-                System.out.println("[JChannel] Receive a shared connect() request for updating th cluster information.");
-                connectCluster(strs[3], strs[2], strs[1]);
-
-                // condition 3, disconnect()
-            } else if (msgStr.startsWith("[Disconnect]")){
-                // Treat the shared connect() request from other nodes for cluster information.
-                String[] strs = msgStr.split(" ");
-                System.out.println("[JChannel] Receive a shared disconnect() request for updating th cluster information.");
-                disconnectCluster(strs[3], strs[2], strs[1]);
-
-            } else if (msgStr.startsWith("[Broadcast]")){
-                System.out.println("[JChannel] Receive a shared send() request for broadcast to JChannl-Clients.");
-                lock.lock();
-                try{
-                    this.service.broadcast(msgStr);
-                } finally {
-                    lock.unlock();
-                }
-            } else if (msgStr.startsWith("[Unicast]")){
-                // When it receive an unicast message from other nodes, it will find the
-                // correct client for it, and send the message.
-                System.out.println("[JChannel] Receive a shared send() request for unicast to a JChannl-Client.");
-                this.service.unicast(msgStr);
             } else if (msgStr.equals("ClusterInformation")){
                 // send the current
                 System.out.println("Receive a request for the current " +
@@ -176,7 +179,7 @@ public class NodeJChannel implements Receiver{
         // whether is the coordinator
         if (this.serviceMap == null){
             if (view.getMembers().get(0).toString().equals(this.channel.getAddress().toString())){
-                System.out.println("This is the coordinator of the node cluster.");
+                System.out.println("[JChannel] This is the coordinator of the node cluster.");
             } else {
                 String msg = "ClusterInformation";
                 try{
@@ -193,25 +196,25 @@ public class NodeJChannel implements Receiver{
         // add node
         synchronized (this.nodesMap) {
             if (currentView.size() > currentNodesList.size()) {
-                System.out.println("Add new node inf.");
+                System.out.println("[JChannel] Store new node inf.");
                 List compare = ListUtils.subtract(currentView, currentNodesList);
                 for (int i = 0; i < compare.size(); i++) {
                     this.nodesMap.put(compare.get(i), "unknown");
                 }
-                System.out.println("The current nodes map: " + this.nodesMap);
+                System.out.println("[JChannel] The current nodes in node cluster: " + this.nodesMap);
                 sendMyself();
             } else if (currentView.size() < currentNodesList.size()) {
-                System.out.println("Remove node inf.");
+                System.out.println("[JChannel] Remove cancelled node inf.");
                 List compare = ListUtils.subtract(currentNodesList, currentView);
                 for (int i = 0; i < compare.size(); i++) {
                     this.nodesMap.remove(compare.get(i));
                 }
-                System.out.println("The current nodes map: " + this.nodesMap);
+                System.out.println("[JChannel] The current nodes in node cluster: " + this.nodesMap);
                 String str = generateAddMsg();
 
                 this.service.broadcastServers(str);
             } else {
-                System.out.println("No change of node inf.");
+                System.out.println("[JChannel] The current nodes does not change.");
             }
         }
     }
@@ -222,7 +225,7 @@ public class NodeJChannel implements Receiver{
         // send messages exclude itself.
         msg.setFlagIfAbsent(Message.TransientFlag.DONT_LOOPBACK);
         try{
-            System.out.println("Send itself.");
+            System.out.println("[JChannel] Send the grpc address of my self.");
             this.channel.send(msg);
         } catch (Exception e) {
             e.printStackTrace();
@@ -295,5 +298,4 @@ public class NodeJChannel implements Receiver{
         }
 
     }
-
 }

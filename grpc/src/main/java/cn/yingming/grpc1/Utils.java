@@ -71,12 +71,12 @@ public class Utils {
         try{
             bytesStream = new ByteArrayInputStream(bytes);
             ObjectInputStream ois = new ObjectInputStream(bytesStream);
-            System.out.println("Unserialize");
+            // System.out.println("Unserialize");
             return ois.readObject();
         } catch (IOException e){
-            e.printStackTrace();
+            // e.printStackTrace();
         } catch (ClassNotFoundException e){
-            e.printStackTrace();
+            // e.printStackTrace();
         } finally {
             try{
                 bytesStream.close();
