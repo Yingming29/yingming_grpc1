@@ -178,12 +178,9 @@ public class BiStreamClient {
         ReentrantLock inputLock;
         ArrayList sharedList;
         AtomicBoolean isWork;
-        String uuid;
-        String name;
 
-        public inputLoop(String uuid, String name, ArrayList sharedList, AtomicBoolean isWork) {
-            this.uuid = uuid;
-            this.name = name;
+        public inputLoop(ArrayList sharedList, AtomicBoolean isWork) {
+
             this.sharedList = sharedList;
             this.isWork = isWork;
             this.inputLock = new ReentrantLock();
@@ -311,7 +308,7 @@ public class BiStreamClient {
         // 2.Start client stub
         this.startClientStub();
         // 3.Create inputLoop Thread.
-        inputLoop inputThread = new inputLoop(this.uuid, this.name, this.msgList, this.isWork);
+        inputLoop inputThread = new inputLoop(this.msgList, this.isWork);
         Thread thread1 = new Thread(inputThread);
         thread1.start();
         // 4. while loop for a client and reconnect.
