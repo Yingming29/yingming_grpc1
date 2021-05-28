@@ -129,6 +129,29 @@ public class NodeServer {
                         // also notify other nodes to delete it
                         forwardMsg(req);
                         onCompleted();
+                    } else if (req.hasStateReq()){
+                        StateReq stateReq = req.getStateReq();
+                        System.out.println("[gRPC] Receive the getState() request from a client.");
+                        System.out.println(stateReq.getJchannelAddress() + "(" +
+                                stateReq.getSource() + ") calls getState() for cluster, " +
+                                stateReq.getCluster());
+                        lock.lock();
+                        try {
+                            // generate the history
+                            ClusterMap cm = (ClusterMap) jchannel.serviceMap.get(stateReq.getCluster());
+                            StateRep stateRep = cm.generateState();
+                            Response rep = Response.newBuilder()
+                                    .setStateRep(stateRep)
+                                    .build();
+                            // send to this client
+                            for (String uuid : clients.keySet()) {
+                                if (uuid.equals(req.getStateReq().getSource())){
+                                    clients.get(uuid).onNext(rep);
+                                }
+                            }
+                        } finally {
+                            lock.unlock();
+                        }
                     } else{
                         /* Condition3
                            Receive the common message, send() request.
@@ -143,6 +166,10 @@ public class NodeServer {
                             System.out.println("[gRPC] Broadcast in the cluster " + msgReq.getCluster());
                             lock.lock();
                             try{
+                                // add to history
+                                ClusterMap cm = (ClusterMap) jchannel.serviceMap.get(msgReq.getCluster());
+                                String line = "[" + msgReq.getJchannelAddress() + "]" + msgReq.getContent();
+                                cm.addHistpry(line);
                                 // send msg to its gRPC clients
                                 broadcast(msgReq);
                                 // forward msg to other nodes
@@ -155,6 +182,7 @@ public class NodeServer {
                             System.out.println("[gRPC] Unicast in the cluster " + msgReq.getCluster() + " to " + msgReq.getDestination());
                             lock.lock();
                             try{
+
                                 // send msg to its gRPC clients
                                 unicast(msgReq);
                                 // forward msg to other JChannels
@@ -188,6 +216,7 @@ public class NodeServer {
                 }
             };
         }
+
         protected String removeClient(StreamObserver responseObserver){
 
             this.lock.lock();

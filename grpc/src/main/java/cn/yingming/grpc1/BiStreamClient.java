@@ -1,5 +1,6 @@
 package cn.yingming.grpc1;
 
+import io.grpc.ClientCall;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.jchannelRpc.*;
@@ -33,9 +34,7 @@ public class BiStreamClient {
     public String cluster;
     private ClientStub clientStub;
     public AtomicBoolean down;
-
-    //
-    private JChannelsServiceGrpc.JChannelsServiceBlockingStub JchannelBlockingStub;
+    public LinkedList history;
 
     public BiStreamClient(String address) {
         this.address = address;
@@ -53,12 +52,15 @@ public class BiStreamClient {
         this.serverList = new ArrayList();
         this.clientStub = null;
         this.down = new AtomicBoolean(true);
+        this.history = new LinkedList();
     }
 
     private StreamObserver startGrpc(AtomicBoolean isWork) {
+
         ReentrantLock lock = new ReentrantLock();
         // Service 1
         StreamObserver<Request> requestStreamObserver = asynStub.connect(new StreamObserver<Response>() {
+
             @Override
             public void onNext(Response response) {
                 clientStub.judgeResponse(response);
@@ -85,6 +87,7 @@ public class BiStreamClient {
             }
         });
         return requestStreamObserver;
+
     }
 
     public void update(String addresses){
@@ -145,7 +148,6 @@ public class BiStreamClient {
         } finally {
             mainLock.unlock();
         }
-
     }
     // set the name and the JChannel address
     private String setName() throws IOException {
@@ -286,6 +288,21 @@ public class BiStreamClient {
     private void startClientStub(){
         this.clientStub = new ClientStub(this);
     }
+
+    private void getState(StreamObserver requestStreamObserver) {
+        // state request
+        StateReq stateReq = StateReq.newBuilder()
+                .setSource(uuid)
+                .setCluster(cluster)
+                .setJchannelAddress(jchannel_address)
+                .build();
+        Request req = Request.newBuilder()
+                .setStateReq(stateReq)
+                .build();
+        System.out.println(this.name + " calls getState() request for Jgroups cluster: " + cluster);
+        requestStreamObserver.onNext(req);
+    }
+
     // main logic
     private void start() throws IOException {
         // 1.Set the name of the client and jchannel cluster.
@@ -302,9 +319,11 @@ public class BiStreamClient {
             // 4.1 start gRPC client and call connect() request.
             StreamObserver requestSender = this.startGrpc(this.isWork);
             this.connectCluster(requestSender);
-            // 4.2 check loop for connection problem and input content, and send request.
+            // 4.2 getState() of JChannel
+            this.getState(requestSender);
+            // 4.3 check loop for connection problem and input content, and send request.
             this.checkLoop(requestSender, this);
-            // 4.3 reconnect part.
+            // 4.4 reconnect part.
             boolean result = this.reconnect();
             if (!result) {
                 System.out.println("End.");

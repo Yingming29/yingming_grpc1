@@ -4,6 +4,7 @@ import io.grpc.jchannelRpc.*;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ClientStub {
@@ -82,6 +83,16 @@ public class ClientStub {
             ViewRep view = response.getViewResponse();
             System.out.println("** View:[" + view.getCreator() + "|" + view.getViewNum() +
                     "] (" + view.getSize() + ")" + view.getJchannelAddresses());
+        } else if (response.hasStateRep()){
+            StateRep state = response.getStateRep();
+            System.out.println(state.getSize() + " messages in the chat history.");
+            if (state.getSize() != 0){
+                LinkedList l = new LinkedList();
+                l.addAll(state.getOneOfHistoryList());
+                for (int i = 0; i < l.size(); i++) {
+                    System.out.println(l.get(i));
+                }
+            }
         }
     }
 

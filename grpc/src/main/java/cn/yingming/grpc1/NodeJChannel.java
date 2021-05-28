@@ -82,6 +82,9 @@ public class NodeJChannel implements Receiver{
                     System.out.println("[JChannel] Receive a shared send() request for broadcast to JChannl-Clients.");
                     lock.lock();
                     try{
+                        ClusterMap cm = (ClusterMap) serviceMap.get(msgReq.getCluster());
+                        String line = "[" + msgReq.getJchannelAddress() + "]" + msgReq.getContent();
+                        cm.addHistpry(line);
                         this.service.broadcast(msgReq);
                     } finally {
                         lock.unlock();

@@ -1,10 +1,12 @@
 package cn.yingming.grpc1;
 
+import io.grpc.jchannelRpc.StateRep;
 import io.grpc.jchannelRpc.ViewRep;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -15,12 +17,14 @@ public class ClusterMap implements Serializable {
     public String creator;
     public ReentrantLock lock;
     public ArrayList orderList;
+    public LinkedList history;
     public ClusterMap(String creator){
         this.map = new ConcurrentHashMap<String, String>();
         this.viewNum = 0;
         this.creator = creator;
         this.lock = new ReentrantLock();
         this.orderList = new ArrayList<String>();
+        this.history = new LinkedList<String>();
     }
     public ConcurrentHashMap getMap(){
         return this.map;
@@ -68,5 +72,27 @@ public class ClusterMap implements Serializable {
     }
     public ArrayList getList(){
         return this.orderList;
+    }
+
+    public StateRep generateState(){
+        StateRep rep;
+        lock.lock();
+        try{
+            rep = StateRep.newBuilder()
+                    .setSize(history.size())
+                    .addAllOneOfHistory(history)
+                    .build();
+        } finally {
+            lock.unlock();
+        }
+        return rep;
+    }
+    public void addHistpry(String line){
+        lock.lock();
+        try{
+            history.add(line);
+        } finally {
+            lock.unlock();
+        }
     }
 }
