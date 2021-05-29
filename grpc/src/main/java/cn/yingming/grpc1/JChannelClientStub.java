@@ -5,8 +5,6 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.jchannelRpc.*;
 import io.grpc.stub.StreamObserver;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class JChannelClientStub {
 
     private JChannelClient client;
-    // private AtomicBoolean haveCluster;  // whether connect to the cluster
+
     private ReentrantLock stubLock;
     public ArrayList serverList;
     private ManagedChannel channel;
@@ -25,7 +23,7 @@ public class JChannelClientStub {
 
     JChannelClientStub(JChannelClient client) {
         this.client = client;
-        // this.haveCluster = new AtomicBoolean(false);
+
         this.stubLock = new ReentrantLock();
         this.serverList = new ArrayList<String>();
         this.channel = ManagedChannelBuilder.forTarget(client.address).usePlaintext().build();

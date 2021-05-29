@@ -1,15 +1,12 @@
 package cn.yingming.grpc1;
 
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.jchannelRpc.JChannelsServiceGrpc;
 import io.grpc.jchannelRpc.Request;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.LinkedList;
+
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -104,12 +101,15 @@ public class JChannelClient {
     }
 
     private void clientStart() throws IOException {
+        // set name and cluster
         this.setName();
         this.setCluster();
+        // start the stub
         this.startClientStub();
         this.clientStub.startStub();
         this.inputLoop();
-        System.out.println("End");
+        System.out.println("End.");
+        System.exit(0);
     }
     public static void main(String[] args) {
         JChannelClient client = new JChannelClient(args[0]);
