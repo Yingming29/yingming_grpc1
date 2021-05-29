@@ -292,8 +292,9 @@ public class JChannelClientStub {
                 if (client.msgList.size() != 0 && client.isWork.get()) {
                     // treat a input.
                     // tag, add a client stub treatment.
-                    Request req = (Request) client.msgList.get(0);
-                    requestSender.onNext(client.msgList.get(0));
+                    String line = (String) client.msgList.get(0);
+                    Request msgReq = judgeRequest(line);
+                    requestSender.onNext(msgReq);
                     stubLock.lock();
                     try {
                         // requestSender.onNext(client.msgList.get(0));

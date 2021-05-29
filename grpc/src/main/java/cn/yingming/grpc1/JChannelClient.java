@@ -73,18 +73,15 @@ public class JChannelClient {
                 System.out.println(">");
                 System.out.flush();
                 line = in.readLine();
-                // remove
-                Request msgReq = clientStub.judgeRequest(line);
-                // Check the isWork, and do action.Add message to that shared message list or print error.
-                if (isWork.get()) {
 
-                } else {
+                // Check the isWork, and do action.Add message to that shared message list or print error.
+                if (!isWork.get()) {
                     System.out.println("The connection does not work. Store the message.");
                 }
                 // store the message to
                 mainLock.lock();
                 try {
-                    this.msgList.add(msgReq);
+                    this.msgList.add(line);
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
