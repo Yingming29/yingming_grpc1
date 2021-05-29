@@ -196,17 +196,15 @@ public class BiStreamClient {
                     System.out.println(">");
                     System.out.flush();
                     String line = in.readLine();
-                    Request msgReq = clientStub.judgeRequest(line);
-                    // Check the isWork, and do action.Add message to that shared message list or print error.
-                    if (isWork.get()) {
 
-                    } else {
+                    // Check the isWork, and do action.Add message to that shared message list or print error.
+                    if (!isWork.get()) {
                         System.out.println("The connection does not work. Store the message.");
                     }
                     // store the message to
                     inputLock.lock();
                     try {
-                        this.sharedList.add(msgReq);
+                        this.sharedList.add(line);
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
@@ -259,8 +257,10 @@ public class BiStreamClient {
             if (client.msgList.size() != 0 && client.isWork.get()) {
                 // treat a input.
                 // tag, add a client stub treatment.
-                Request req = (Request) client.msgList.get(0);
-                requestSender.onNext(client.msgList.get(0));
+                String line = (String) msgList.get(0);
+                Request msgReq = clientStub.judgeRequest(line);
+
+                requestSender.onNext(msgReq);
                 client.mainLock.lock();
                 try {
                     // requestSender.onNext(client.msgList.get(0));
