@@ -110,7 +110,7 @@ public class JChannelClient {
     }
     public static void main(String[] args) {
         JChannelClient client = new JChannelClient(args[0]);
-        System.out.printf("Start client: Will connect to gRPC server: %s \n", args[0]);
+        System.out.printf("Start java client: Will connect to gRPC server: %s \n", args[0]);
         try{
             client.clientStart();
         } catch (Exception e){
