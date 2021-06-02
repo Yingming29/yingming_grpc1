@@ -25,17 +25,30 @@ public class ClientStub {
         // single send request
         if (input.startsWith("TO")){
             String[] strs = input.split(" ", 3);
-            // set up time for msg, and build message
-            MessageReq msgReq = MessageReq.newBuilder()
-                    .setSource(this.client.uuid)
-                    .setJchannelAddress(this.client.jchannel_address)
-                    .setCluster(this.client.cluster)
-                    .setContent(strs[2])
-                    .setTimestamp(dft.format(d))
-                    .setDestination(strs[1])
-                    .build();
-            Request req = Request.newBuilder().setMessageRequest(msgReq).build();
-            return req;
+            if (strs.length == 3){
+                // set up time for msg, and build message
+                MessageReq msgReq = MessageReq.newBuilder()
+                        .setSource(this.client.uuid)
+                        .setJchannelAddress(this.client.jchannel_address)
+                        .setCluster(this.client.cluster)
+                        .setContent(strs[2])
+                        .setTimestamp(dft.format(d))
+                        .setDestination(strs[1])
+                        .build();
+                Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                return req;
+            } else {
+                MessageReq msgReq = MessageReq.newBuilder()
+                        .setSource(this.client.uuid)
+                        .setJchannelAddress(this.client.jchannel_address)
+                        .setCluster(this.client.cluster)
+                        .setContent(input)
+                        .setTimestamp(dft.format(d))
+                        .build();
+                Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                return req;
+            }
+
         } else if (input.equals("disconnect")) {
             // disconnect request
             DisconnectReq msgReq = DisconnectReq.newBuilder()
