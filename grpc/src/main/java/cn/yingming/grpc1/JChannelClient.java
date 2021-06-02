@@ -101,7 +101,7 @@ public class JChannelClient {
         // set name and cluster
         this.setName();
         this.setCluster();
-        // start the stub
+        // start the stub.
         this.startClientStub();
         this.clientStub.startStub();
         this.inputLoop();
