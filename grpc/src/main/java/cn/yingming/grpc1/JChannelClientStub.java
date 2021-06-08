@@ -37,17 +37,30 @@ public class JChannelClientStub {
         // single send request
         if (input.startsWith("TO")){
             String[] strs = input.split(" ", 3);
-            // set up time for msg, and build message
-            MessageReq msgReq = MessageReq.newBuilder()
-                    .setSource(this.client.uuid)
-                    .setJchannelAddress(this.client.jchannel_address)
-                    .setCluster(this.client.cluster)
-                    .setContent(strs[2])
-                    .setTimestamp(dft.format(d))
-                    .setDestination(strs[1])
-                    .build();
-            Request req = Request.newBuilder().setMessageRequest(msgReq).build();
-            return req;
+            if (strs.length == 3){
+                // set up time for msg, and build message
+                MessageReq msgReq = MessageReq.newBuilder()
+                        .setSource(this.client.uuid)
+                        .setJchannelAddress(this.client.jchannel_address)
+                        .setCluster(this.client.cluster)
+                        .setContent(strs[2])
+                        .setTimestamp(dft.format(d))
+                        .setDestination(strs[1])
+                        .build();
+                Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                return req;
+            } else{
+                // common message for broadcast to its cluster.
+                MessageReq msgReq = MessageReq.newBuilder()
+                        .setSource(this.client.uuid)
+                        .setJchannelAddress(this.client.jchannel_address)
+                        .setCluster(this.client.cluster)
+                        .setContent(input)
+                        .setTimestamp(dft.format(d))
+                        .build();
+                Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                return req;
+            }
         } else if (input.equals("disconnect")) {
             // disconnect request
             DisconnectReq msgReq = DisconnectReq.newBuilder()
@@ -77,7 +90,7 @@ public class JChannelClientStub {
     public void judgeResponse(Response response){
 
         if (response.hasConnectResponse()){
-            System.out.println("Get Connect() response.");
+            // System.out.println("Get Connect() response.");
         } else if (response.hasMessageResponse()){
             // get message from server
             printMsg(response.getMessageResponse());
@@ -198,7 +211,7 @@ public class JChannelClientStub {
         Request req = Request.newBuilder()
                 .setConnectRequest(joinReq)
                 .build();
-        System.out.println(client.name + " calls connect() request to Jgroups cluster: " + client.cluster);
+        // System.out.println(client.name + " calls connect() request to Jgroups cluster: " + client.cluster);
         requestStreamObserver.onNext(req);
         // change the state of client
         stubLock.lock();
@@ -211,6 +224,16 @@ public class JChannelClientStub {
     // Do a reconnection loop with given times. e.g. 10 times.
     private boolean reconnect() {
         int count = 0;
+        if (this.serverList.size() == 0){
+            System.out.println("The available server list is null. Cannot select new address of node.");
+            this.stubLock.lock();
+            try{
+                this.client.down.set(false);
+            } finally {
+                this.stubLock.unlock();
+            }
+            return false;
+        }
         while (true) {
             count++;
             Random r = new Random();
@@ -248,7 +271,7 @@ public class JChannelClientStub {
         Request req = Request.newBuilder()
                 .setStateReq(stateReq)
                 .build();
-        System.out.println(client.name + " calls getState() request for Jgroups cluster: " + client.cluster);
+        // System.out.println(client.name + " calls getState() request for Jgroups cluster: " + client.cluster);
         requestStreamObserver.onNext(req);
     }
 

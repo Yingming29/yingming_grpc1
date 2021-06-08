@@ -1,7 +1,5 @@
 package cn.yingming.grpc1;
 
-import io.grpc.jchannelRpc.Request;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -74,10 +72,15 @@ public class JChannelClient {
                 System.out.flush();
                 line = in.readLine();
 
+                if(!this.down.get()){
+                    break;
+                }
+
                 // Check the isWork, and do action.Add message to that shared message list or print error.
                 if (!isWork.get()) {
                     System.out.println("The connection does not work. Store the message.");
                 }
+
                 // store the message to
                 mainLock.lock();
                 try {
@@ -105,7 +108,6 @@ public class JChannelClient {
         this.startClientStub();
         this.clientStub.startStub();
         this.inputLoop();
-        System.out.println("End.");
         System.exit(0);
     }
     public static void main(String[] args) {
