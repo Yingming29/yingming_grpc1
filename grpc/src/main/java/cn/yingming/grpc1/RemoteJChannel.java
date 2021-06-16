@@ -2,6 +2,7 @@ package cn.yingming.grpc1;
 
 import org.jgroups.*;
 import org.jgroups.stack.ProtocolStack;
+import org.jgroups.util.NameCache;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -43,34 +44,28 @@ public class RemoteJChannel extends JChannel {
 
     @Override
     public Receiver getReceiver() {
+        /*
         try {
             throw new Exception("RemoteJChannel does not have Receiver. getReceiver() always returns null.");
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+
+         */
+        throw new UnsupportedOperationException("RemoteJChannel does not have Receiver. " +
+                "getReceiver() does not return anything.");
     }
 
     @Override
     public JChannel setReceiver(Receiver r) {
-        try {
-            throw new Exception("RemoteJChannel does not have Receiver. " +
-                    "setReceiver() does not success.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return this;
+        throw new UnsupportedOperationException("RemoteJChannel does not have Receiver. " +
+                "setReceiver() does not return anything.");
     }
 
     @Override
     public JChannel receiver(Receiver r) {
-        try {
-            throw new Exception("RemoteJChannel does not have Receiver. " +
-                    "receiver() and setReceiver() does not success.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return this;
+        throw new UnsupportedOperationException("RemoteJChannel does not have Receiver. " +
+                "receiver() does not return anything.");
     }
 
     @Override
@@ -80,13 +75,8 @@ public class RemoteJChannel extends JChannel {
 
     @Override
     public Address address() {
-        try {
-            throw new Exception("RemoteJChannel does not have Address. " +
-                    "Please use getAddressAsString() or getAddressAsUUID().");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        throw new UnsupportedOperationException("RemoteJChannel does not have Address. " +
+                "Please use getAddressAsString() and getAddressAsUUID().");
     }
 
     public String getName() {
@@ -112,24 +102,14 @@ public class RemoteJChannel extends JChannel {
 
     @Override
     public View getView() {
-        try {
-            throw new Exception("RemoteJChannel does not have View object. " +
-                    "Please use new method getRemoteJChannelView().");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        throw new UnsupportedOperationException("RemoteJChannel does not have View object. " +
+                "Please use new method getRemoteJChannelView().");
     }
 
     @Override
     public View view() {
-        try {
-            throw new Exception("RemoteJChannel does not have View object. " +
-                    "Please use new method remoteJChannelView().");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        throw new UnsupportedOperationException("RemoteJChannel does not have View object. " +
+                "Please use new method remoteJChannelView().");
     }
 
     public RemoteJChannelView getRemoteJChannelView(){
@@ -142,46 +122,26 @@ public class RemoteJChannel extends JChannel {
 
     @Override
     public ProtocolStack getProtocolStack() {
-        try {
-            throw new Exception("RemoteJChannel does not have ProtocolStack object. " +
-                    "getProtocolStack() always returns null.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        throw new UnsupportedOperationException("RemoteJChannel does not have ProtocolStack object. " +
+                "getProtocolStack() does not return anything.");
     }
 
     @Override
     public ProtocolStack stack() {
-        try {
-            throw new Exception("RemoteJChannel does not have ProtocolStack object. " +
-                    "stack() always returns null.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        throw new UnsupportedOperationException("RemoteJChannel does not have ProtocolStack object. " +
+                "stack() does not return anything.");
     }
 
     @Override
     public UpHandler getUpHandler() {
-        try {
-            throw new Exception("RemoteJChannel does not have UpHandler. " +
-                    "getUpHandler() always returns null.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        throw new UnsupportedOperationException("RemoteJChannel does not have UpHandler. " +
+                "getUpHandler() does not return anything.");
     }
 
     @Override
     public JChannel setUpHandler(UpHandler h) {
-        try {
-            throw new Exception("RemoteJChannel does not have UpHandler. " +
-                    "setUpHandler() just returns this RemoteJChannel object.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return this;
+        throw new UnsupportedOperationException("RemoteJChannel does not have UpHandler. " +
+                "setUpHandler() does not return anything.");
     }
 
 
@@ -213,14 +173,66 @@ public class RemoteJChannel extends JChannel {
     }
 
     public boolean flushSupported() {
-        try {
-            throw new Exception("RemoteJChannel does not have flush. " +
-                    "flushSupported() just returns false.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+        throw new UnsupportedOperationException("RemoteJChannel does not have flush. " +
+                "flushSupported() does not return anything.");
     }
+
+    @Override
+    /*
+    The methods returns the generated FAKE jchannel address. eg. JChannel-xxx
+     */
+    public String getAddressAsString() {
+        return this.jchannel_address != null ? this.jchannel_address : "n/a";
+    }
+
+    @Override
+    /*
+    The methods returns the generated uuid.
+     */
+    public String getAddressAsUUID() {
+        return this.uuid != null ? this.uuid : null;
+    }
+
+    @Override
+    public JChannel setName(String name) {
+        if (name != null) {
+            if (this.isWork.get()) {
+                throw new IllegalStateException("name cannot be set if channel is connected (should be done before)");
+            }
+            if (this.name != null) {
+                throw new IllegalStateException("name cannot be set if channel has name property. ");
+            }
+            this.name = name;
+            /*
+            if (this.local_addr != null) {
+
+                NameCache.add(this.local_addr, this.name);
+            }
+
+             */
+        }
+        return this;
+    }
+
+    @Override
+    public String getClusterName() {
+        return this.isWork.get() ? this.cluster : null;
+    }
+
+    @Override
+    public String getViewAsString() {
+        if (isWork.get() && this.view != null){
+            return this.view.toString();
+        } else{
+            throw new IllegalStateException("View cannot be get if channel is not connected or does not have View");
+        }
+    }
+
+    @Override
+    public String getState() {
+        return this.clientStub.;
+    }
+
 
 
 

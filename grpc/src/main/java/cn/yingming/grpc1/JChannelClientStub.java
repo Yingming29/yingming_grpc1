@@ -23,7 +23,6 @@ public class JChannelClientStub {
 
     JChannelClientStub(JChannelClient client) {
         this.client = client;
-
         this.stubLock = new ReentrantLock();
         this.serverList = new ArrayList<String>();
         this.channel = ManagedChannelBuilder.forTarget(client.address).usePlaintext().build();
