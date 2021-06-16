@@ -170,10 +170,12 @@ public class NodeServer {
                                 ClusterMap cm = (ClusterMap) jchannel.serviceMap.get(msgReq.getCluster());
                                 String line = "[" + msgReq.getJchannelAddress() + "]" + msgReq.getContent();
                                 cm.addHistory(line);
-                                // send msg to its gRPC clients
-                                broadcast(msgReq);
+
                                 // forward msg to other nodes
                                 forwardMsg(req);
+                                // send msg to its gRPC clients
+                                broadcast(msgReq);
+
                             }finally {
                                 lock.unlock();
                             }

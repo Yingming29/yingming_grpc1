@@ -20,6 +20,8 @@ public class RemoteJChannel extends JChannel {
     public JChannelClientStub clientStub;
     public AtomicBoolean down;
     public RemoteJChannelView view;
+    public boolean stats;
+    public boolean discard_own_messages;
 
     public RemoteJChannel(String name, String address) throws Exception {
         this.address = address;
@@ -35,6 +37,8 @@ public class RemoteJChannel extends JChannel {
         this.clientStub = null;
         this.down = new AtomicBoolean(true);
         this.view = new RemoteJChannelView();
+        this.stats = false;
+        this.discard_own_messages = false;
     }
 
     @Override
@@ -85,12 +89,11 @@ public class RemoteJChannel extends JChannel {
         return null;
     }
 
-    @Override
     public String getName() {
         return this.name;
     }
 
-    @Override
+
     public String name() {
         return this.name;
     }
@@ -182,10 +185,48 @@ public class RemoteJChannel extends JChannel {
     }
 
 
+    public boolean getStats() {
+        return this.stats;
+    }
+
+    public boolean stats() {
+        return this.stats;
+    }
+
+    public JChannel setStats(boolean stats) {
+        this.stats = stats;
+        return this;
+    }
+
+    public JChannel stats(boolean stats) {
+        this.stats = stats;
+        return this;
+    }
+
+    public boolean getDiscardOwnMessages() {
+        return this.discard_own_messages;
+    }
+
+    public JChannel setDiscardOwnMessages(boolean flag) {
+        this.discard_own_messages = flag;
+        return this;
+    }
+
+    public boolean flushSupported() {
+        try {
+            throw new Exception("RemoteJChannel does not have flush. " +
+                    "flushSupported() just returns false.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 
 
     public static void main(String[] args) throws Exception {
         RemoteJChannel rj = new RemoteJChannel("abc", "abc");
-
+        rj.getReceiver();
+        System.out.println("1231");
     }
 }
