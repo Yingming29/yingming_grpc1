@@ -21,6 +21,7 @@ public class JChannelClient {
     public String jchannel_address;
     public JChannelClientStub clientStub;
     public AtomicBoolean down;
+    public RemoteJChannelView view;
 
     public JChannelClient(String address) {
         this.address = address;
@@ -33,6 +34,7 @@ public class JChannelClient {
         this.msgList = new ArrayList();
         this.clientStub = null;
         this.down = new AtomicBoolean(true);
+        this.view = new RemoteJChannelView();
     }
 
     // set the name and the JChannel address

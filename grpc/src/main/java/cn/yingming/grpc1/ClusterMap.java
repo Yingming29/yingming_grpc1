@@ -54,15 +54,15 @@ public class ClusterMap implements Serializable {
         this.lock.lock();
         try{
             //List clientList = this.orderList;
-            List clientList = new ArrayList();
+            /* List clientList = new ArrayList();
             for (Object each:this.getMap().keySet()) {
                 clientList.add(this.getMap().get(each.toString()));
-            }
+            }*/
             rep = ViewRep.newBuilder()
                     .setCreator(getCreator())
                     .setViewNum(getViewNum())
-                    .setSize(clientList.size())
-                    .setJchannelAddresses(clientList.toString())
+                    .setSize(this.orderList.size())
+                    .setJchannelAddresses(this.orderList.toString())
                     .build();
             addViewNum();
         } finally {
@@ -87,7 +87,7 @@ public class ClusterMap implements Serializable {
         }
         return rep;
     }
-    public void addHistpry(String line){
+    public void addHistory(String line){
         lock.lock();
         try{
             history.add(line);

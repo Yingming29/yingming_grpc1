@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Test {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         /*
         ClusterMap m = new ClusterMap("TestCreator");
         m.getMap().put("Testuuid", "TestAddress");
@@ -33,5 +33,7 @@ public class Test {
         l.add("12312312312");
         System.out.println(l);
         System.out.println(l.indexOf("123"));
+        // RemoteJChannel j = new RemoteJChannel("3213");
+
     }
 }

@@ -84,7 +84,7 @@ public class NodeJChannel implements Receiver{
                     try{
                         ClusterMap cm = (ClusterMap) serviceMap.get(msgReq.getCluster());
                         String line = "[" + msgReq.getJchannelAddress() + "]" + msgReq.getContent();
-                        cm.addHistpry(line);
+                        cm.addHistory(line);
                         this.service.broadcast(msgReq);
                     } finally {
                         lock.unlock();
