@@ -1,10 +1,13 @@
 package cn.yingming.grpc1;
 
 import org.jgroups.*;
+import org.jgroups.annotations.ManagedOperation;
+import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.ProtocolStack;
-import org.jgroups.util.NameCache;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -18,11 +21,16 @@ public class RemoteJChannel extends JChannel {
     public AtomicBoolean isWork;
     public ArrayList msgList;
     public String jchannel_address;
-    public JChannelClientStub clientStub;
+    // change from JChannelClientStub to RemoteJChannelStub
+    public RemoteJChannelStub clientStub;
     public AtomicBoolean down;
     public RemoteJChannelView view;
+    // whether stats?
     public boolean stats;
+    // whether receive message of itself
     public boolean discard_own_messages;
+    // record for stats
+    public StatsRJ stats_obj;
 
     public RemoteJChannel(String name, String address) throws Exception {
         this.address = address;
@@ -40,6 +48,7 @@ public class RemoteJChannel extends JChannel {
         this.view = new RemoteJChannelView();
         this.stats = false;
         this.discard_own_messages = false;
+        this.stats_obj = null;
     }
 
     @Override
@@ -230,15 +239,265 @@ public class RemoteJChannel extends JChannel {
 
     @Override
     public String getState() {
-        return this.clientStub.;
+        if(this.clientStub != null && this.clientStub.channel != null){
+            return this.clientStub.channel.getState(true).toString();
+        } else{
+            throw new IllegalStateException("The stub or channel of stub does not work.");
+        }
     }
+    @Override
+    public boolean isOpen() {
+        if(this.clientStub != null && this.clientStub.channel != null){
+            if (!this.clientStub.channel.isTerminated() && !this.clientStub.channel.isShutdown()){
+                return true;
+            }
+        } else{
+            throw new IllegalStateException("The stub or channel of stub does not work.");
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isConnected() {
+        throw new UnsupportedOperationException("RemoteJChannel does not have CONNECTED state." +
+                "Please use isOpen() or getState().");
+    }
+
+    @Override
+    public boolean isConnecting() {
+        throw new UnsupportedOperationException("RemoteJChannel does not have CONNECTING state." +
+                "Please use isOpen(), isClose() or getState().");
+    }
+
+    @Override
+    public boolean isClosed() {
+        if(this.clientStub != null && this.clientStub.channel != null){
+            if (this.clientStub.channel.isTerminated() || this.clientStub.channel.isShutdown()){
+                return true;
+            }
+        } else{
+            throw new IllegalStateException("The stub or channel of stub does not work.");
+        }
+        return false;
+    }
+
+    public static String getVersion() {
+        return "RemoteJChannel v0.5";
+    }
+
+    @Override
+    public synchronized JChannel addChannelListener(ChannelListener listener) {
+        throw new UnsupportedOperationException("RemoteJChannel does not have ChannelListener.");
+    }
+
+    @Override
+    public synchronized JChannel removeChannelListener(ChannelListener listener) {
+        throw new UnsupportedOperationException("RemoteJChannel does not have ChannelListener.");
+    }
+
+    @Override
+    public synchronized JChannel clearChannelListeners() {
+        throw new UnsupportedOperationException("RemoteJChannel does not have ChannelListener.");
+    }
+
+    @Override
+    public JChannel addAddressGenerator(AddressGenerator address_generator) {
+        throw new UnsupportedOperationException("RemoteJChannel does not have AddressGenerator.");
+    }
+
+    @Override
+    public boolean removeAddressGenerator(AddressGenerator address_generator) {
+        throw new UnsupportedOperationException("RemoteJChannel does not have AddressGenerator.");
+    }
+
+    @Override
+    public String getProperties() {
+        throw new UnsupportedOperationException("RemoteJChannel does not have ProtocolStack.");
+    }
+
+    @Override
+    public String printProtocolSpec(boolean include_props) {
+        throw new UnsupportedOperationException("RemoteJChannel does not have ProtocolStack.");
+    }
+
+
+    @Override
+    public Map<String, Map<String, Object>> dumpStats() {
+        throw new UnsupportedOperationException("RemoteJChannel does not have ProtocolStack.");
+    }
+
+    @Override
+    public Map<String, Map<String, Object>> dumpStats(String protocol_name, List<String> attrs) {
+        throw new UnsupportedOperationException("RemoteJChannel does not have ProtocolStack.");
+    }
+
+    @Override
+    public Map<String, Map<String, Object>> dumpStats(String protocol_name) {
+        throw new UnsupportedOperationException("RemoteJChannel does not have ProtocolStack.");
+    }
+
+
+    // incomplete
+    // return object or print string?
+    public StatsRJ remoteJChannelDumpStats(){
+        return this.stats_obj;
+    }
+
+    @Override
+    public synchronized JChannel connect(String cluster_name) throws Exception {
+        if (cluster_name == null || cluster_name.equals("")){
+            throw new IllegalArgumentException("The cluster_name cannot be null.");
+        }
+        this.cluster = cluster_name;
+        boolean checkResult = this.checkProperty();
+        if (checkResult){
+            this.clientStub = new RemoteJChannelStub(this);
+            this.clientStub.startStub();
+            return this;
+        } else{
+            throw new IllegalStateException("The connect() does not work " +
+                    "because the RemoteJchannel miss some properties.");
+        }
+    }
+
+    // target is the address of grpc server.
+    public synchronized JChannel connect(String cluster_name, String target) throws Exception {
+        if (cluster_name == null || cluster_name.equals("")){
+            throw new IllegalArgumentException("The cluster_name cannot be null.");
+        } else if (target == null || target.equals("")){
+            throw new IllegalArgumentException("The target cannot be null.");
+        }
+        this.cluster = cluster_name;
+        this.address = target;
+        boolean checkResult = this.checkProperty();
+        if (checkResult){
+            this.clientStub = new RemoteJChannelStub(this);
+            this.clientStub.startStub();
+            return this;
+        } else{
+            throw new IllegalStateException("The connect() does not work " +
+                    "because the RemoteJchannel miss some properties.");
+        }
+    }
+
+    private boolean checkProperty(){
+        if (this.name == null || this.name.equals("")){
+            throw new IllegalStateException("The name of RemoteJChannel is null.");
+        } else if (this.address == null || this.address.equals("")){
+            throw new IllegalStateException("The address (for grpc server) of RemoteJChannel is null.");
+        } else if (this.jchannel_address == null || this.jchannel_address.equals("")){
+            throw new IllegalStateException("The jchannel_address of RemoteJChannel is null.");
+        } else if (this.view == null){
+            throw new IllegalStateException("The view of RemoteJChannel is null.");
+        } else if (this.cluster == null || this.cluster.equals("")){
+            throw new IllegalStateException("The cluster of RemoteJChannel is null.");
+        } else if (this.isWork.get()){
+            throw new IllegalStateException("The isWork of RemoteJChannel is true.");
+        } else if (this.msgList == null){
+            throw new IllegalStateException("The msgList (message list) of RemoteJChannel is null.");
+        } else{
+            return true;
+        }
+    }
+
+    @Override
+    protected synchronized JChannel connect(String cluster_name, boolean useFlushIfPresent) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this connect()." +
+                "PLease use connect(String cluster) or connect(String cluster, String target)");
+    }
+    @Override
+    public synchronized JChannel connect(String cluster_name, Address target, long timeout) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this connect()." +
+                "PLease use connect(String cluster) or connect(String cluster, String target)");
+    }
+    @Override
+    public synchronized JChannel connect(String cluster_name, Address target, long timeout, boolean useFlushIfPresent) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this connect()." +
+                "PLease use connect(String cluster) or connect(String cluster, String target)");
+    }
+    @Override
+    public synchronized JChannel disconnect(){
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
+            String msg = "disconnect";
+            this.msgList.add(msg);
+        } finally {
+            lock.unlock();
+        }
+        return this;
+    }
+    @Override
+    public synchronized void close(){
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
+            String msg = "disconnect";
+            this.msgList.add(msg);
+        } finally {
+            lock.unlock();
+        }
+    }
+    @Override
+    public JChannel send(Message msg) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method." +
+                " Please use other send().");
+    }
+    @Override
+    public JChannel send(Address dst, Object obj) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method." +
+                " Please use other send().");
+    }
+    @Override
+    public JChannel send(Address dst, byte[] buf) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method." +
+                " Please use other send().");
+    }
+    @Override
+    public JChannel send(Address dst, byte[] buf, int offset, int length) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method." +
+                " Please use other send().");
+    }
+
+
+    // the send() just for broadcast in cluster
+    public JChannel send(String msg){
+        if (msg == null){
+            throw new IllegalArgumentException("The msg argument cannot be null.");
+        }
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
+            this.msgList.add(msg);
+        } finally {
+            lock.unlock();
+        }
+        return this;
+    }
+
+    // for unicast
+    public JChannel send(String msg, String dst){
+        if (msg == null || dst == null){
+            throw new IllegalArgumentException("The msg or dst argument cannot be null.");
+        }
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
+            String command = "TO " + dst + " " + ;
+            this.msgList.add(msg);
+        } finally {
+            lock.unlock();
+        }
+        return this;
+    }
+
 
 
 
 
     public static void main(String[] args) throws Exception {
         RemoteJChannel rj = new RemoteJChannel("abc", "abc");
-        rj.getReceiver();
-        System.out.println("1231");
+
+        System.out.println(rj.getVersion());
     }
 }

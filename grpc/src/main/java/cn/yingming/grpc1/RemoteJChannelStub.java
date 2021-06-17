@@ -4,6 +4,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.jchannelRpc.*;
 import io.grpc.stub.StreamObserver;
+import org.jgroups.Receiver;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -11,9 +12,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class JChannelClientStub {
+public class RemoteJChannelStub{
 
-    private JChannelClient client;
+    private RemoteJChannel client;
 
     private ReentrantLock stubLock;
     public ArrayList serverList;
@@ -21,7 +22,7 @@ public class JChannelClientStub {
     private JChannelsServiceGrpc.JChannelsServiceBlockingStub blockingStub;
     private JChannelsServiceGrpc.JChannelsServiceStub asynStub;
 
-    JChannelClientStub(JChannelClient client) {
+    RemoteJChannelStub(RemoteJChannel client) {
         this.client = client;
         this.stubLock = new ReentrantLock();
         this.serverList = new ArrayList<String>();
