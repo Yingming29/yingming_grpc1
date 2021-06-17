@@ -31,24 +31,50 @@ public class RemoteJChannelStub{
         this.blockingStub = JChannelsServiceGrpc.newBlockingStub(this.channel);
     }
 
-    public Request judgeRequest(String input) {
+    public Request judgeRequest(Object obj) {
         Date d = new Date();
         SimpleDateFormat dft = new SimpleDateFormat("hh:mm:ss");
-        // single send request
-        if (input.startsWith("TO")){
-            String[] strs = input.split(" ", 3);
-            if (strs.length == 3){
-                // set up time for msg, and build message
-                MessageReq msgReq = MessageReq.newBuilder()
+        if (obj instanceof String){
+            String input = (String) obj;
+            // single send request
+            if (input.startsWith("TO")){
+                String[] strs = input.split(" ", 3);
+                if (strs.length == 3){
+                    // set up time for msg, and build message
+                    MessageReq msgReq = MessageReq.newBuilder()
+                            .setSource(this.client.uuid)
+                            .setJchannelAddress(this.client.jchannel_address)
+                            .setCluster(this.client.cluster)
+                            .setContent(strs[2])
+                            .setTimestamp(dft.format(d))
+                            .setDestination(strs[1])
+                            .build();
+                    Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                    return req;
+                } else{
+                    // common message for broadcast to its cluster.
+                    MessageReq msgReq = MessageReq.newBuilder()
+                            .setSource(this.client.uuid)
+                            .setJchannelAddress(this.client.jchannel_address)
+                            .setCluster(this.client.cluster)
+                            .setContent(input)
+                            .setTimestamp(dft.format(d))
+                            .build();
+                    Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                    return req;
+                }
+            } else if (input.equals("disconnect")) {
+                // disconnect request
+                DisconnectReq msgReq = DisconnectReq.newBuilder()
                         .setSource(this.client.uuid)
                         .setJchannelAddress(this.client.jchannel_address)
                         .setCluster(this.client.cluster)
-                        .setContent(strs[2])
                         .setTimestamp(dft.format(d))
-                        .setDestination(strs[1])
                         .build();
-                Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                Request req = Request.newBuilder()
+                        .setDisconnectRequest(msgReq).build();
                 return req;
+
             } else{
                 // common message for broadcast to its cluster.
                 MessageReq msgReq = MessageReq.newBuilder()
@@ -61,30 +87,66 @@ public class RemoteJChannelStub{
                 Request req = Request.newBuilder().setMessageRequest(msgReq).build();
                 return req;
             }
-        } else if (input.equals("disconnect")) {
-            // disconnect request
-            DisconnectReq msgReq = DisconnectReq.newBuilder()
-                    .setSource(this.client.uuid)
-                    .setJchannelAddress(this.client.jchannel_address)
-                    .setCluster(this.client.cluster)
-                    .setTimestamp(dft.format(d))
-                    .build();
-            Request req = Request.newBuilder()
-                    .setDisconnectRequest(msgReq).build();
-            return req;
-
-        } else{
-            // common message for broadcast to its cluster.
-            MessageReq msgReq = MessageReq.newBuilder()
-                    .setSource(this.client.uuid)
-                    .setJchannelAddress(this.client.jchannel_address)
-                    .setCluster(this.client.cluster)
-                    .setContent(input)
-                    .setTimestamp(dft.format(d))
-                    .build();
-            Request req = Request.newBuilder().setMessageRequest(msgReq).build();
-            return req;
         }
+        else if(obj instanceof MessageRJ){
+            MessageRJ msg = (MessageRJ) obj;
+            boolean checkResult = msg.check();
+            if (!checkResult){
+                try{
+                    throw new IllegalArgumentException("The MessageRJ has both of buf and msg property.");
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+                if (msg.getDst() != null){
+                    MessageReq msgReq = MessageReq.newBuilder()
+                            .setSource(this.client.uuid)
+                            .setJchannelAddress(this.client.jchannel_address)
+                            .setCluster(this.client.cluster)
+                            .setContent(msg.getMsg())
+                            .setTimestamp(dft.format(d))
+                            .setDestination(msg.getDst())
+                            .build();
+                    Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                    return req;
+                } else{
+                    MessageReq msgReq = MessageReq.newBuilder()
+                            .setSource(this.client.uuid)
+                            .setJchannelAddress(this.client.jchannel_address)
+                            .setCluster(this.client.cluster)
+                            .setContent(msg.getMsg())
+                            .setTimestamp(dft.format(d))
+                            .build();
+                    Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                    return req;
+                }
+
+            } else{
+                if (msg.getDst() != null){
+                    MessageReq msgReq = MessageReq.newBuilder()
+                            .setSource(this.client.uuid)
+                            .setJchannelAddress(this.client.jchannel_address)
+                            .setCluster(this.client.cluster)
+                            .setContent(msg.getMsg())
+                            .setTimestamp(dft.format(d))
+                            .setDestination(msg.getDst())
+                            .build();
+                    Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                    return req;
+                } else{
+                    MessageReq msgReq = MessageReq.newBuilder()
+                            .setSource(this.client.uuid)
+                            .setJchannelAddress(this.client.jchannel_address)
+                            .setCluster(this.client.cluster)
+                            .setContent(msg.getMsg())
+                            .setTimestamp(dft.format(d))
+                            .build();
+                    Request req = Request.newBuilder().setMessageRequest(msgReq).build();
+                    return req;
+                }
+
+            }
+        }
+
     }
 
     public void judgeResponse(Response response){
@@ -315,8 +377,8 @@ public class RemoteJChannelStub{
                 if (client.msgList.size() != 0 && client.isWork.get()) {
                     // treat a input.
                     // tag, add a client stub treatment.
-                    String line = (String) client.msgList.get(0);
-                    Request msgReq = judgeRequest(line);
+                    Object obj = client.msgList.get(0);
+                    Request msgReq = judgeRequest(obj);
                     requestSender.onNext(msgReq);
                     stubLock.lock();
                     try {

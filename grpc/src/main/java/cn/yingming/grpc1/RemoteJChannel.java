@@ -465,6 +465,38 @@ public class RemoteJChannel extends JChannel {
         if (msg == null){
             throw new IllegalArgumentException("The msg argument cannot be null.");
         }
+        MessageRJ message = new MessageRJ(msg);
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
+            this.msgList.add(message);
+        } finally {
+            lock.unlock();
+        }
+        return this;
+    }
+
+    // for unicast
+    public JChannel send(String msg, String dst){
+        if (msg == null || dst == null || msg.equals("") || dst.equals("")){
+            throw new IllegalArgumentException("The msg or dst argument cannot be null.");
+        }
+        MessageRJ message = new MessageRJ(msg, dst);
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
+            this.msgList.add(message);
+        } finally {
+            lock.unlock();
+        }
+        return this;
+    }
+
+    // send byte[] with unicast
+    public JChannel send(MessageRJ msg){
+        if (msg == null || msg.getBuf() == null || msg.getDst() == null || msg.getDst().equals("")){
+            throw new IllegalArgumentException("The msg or dst or byte[] argument cannot be null.");
+        }
         ReentrantLock lock = new ReentrantLock();
         lock.lock();
         try{
@@ -475,15 +507,31 @@ public class RemoteJChannel extends JChannel {
         return this;
     }
 
-    // for unicast
-    public JChannel send(String msg, String dst){
-        if (msg == null || dst == null){
-            throw new IllegalArgumentException("The msg or dst argument cannot be null.");
+    // send byte[] with dst (unicast)
+    public JChannel send(String dst, byte[] buf){
+        if (buf == null || dst == null || dst.equals("")){
+            throw new IllegalArgumentException("The byte[] or dst argument cannot be null.");
         }
+        MessageRJ msg = new MessageRJ(buf, dst);
         ReentrantLock lock = new ReentrantLock();
         lock.lock();
         try{
-            String command = "TO " + dst + " " + ;
+            this.msgList.add(msg);
+        } finally {
+            lock.unlock();
+        }
+        return this;
+    }
+
+    // send byte[] without dst
+    public JChannel send(byte[] buf){
+        if (buf == null){
+            throw new IllegalArgumentException("The byte[] argument cannot be null.");
+        }
+        MessageRJ msg = new MessageRJ(buf);
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
             this.msgList.add(msg);
         } finally {
             lock.unlock();
