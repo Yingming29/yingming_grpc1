@@ -4,7 +4,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.jchannelRpc.*;
 import io.grpc.stub.StreamObserver;
-import org.jgroups.Receiver;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -152,7 +151,7 @@ public class RemoteJChannelStub{
     public void judgeResponse(Response response){
 
         if (response.hasConnectResponse()){
-            // System.out.println("Get Connect() response.");
+             System.out.println("Get Connect() response.");
         } else if (response.hasMessageResponse()){
             // get message from server
             printMsg(response.getMessageResponse());
@@ -168,8 +167,13 @@ public class RemoteJChannelStub{
 
         } else if (response.hasViewResponse()){
             ViewRep view = response.getViewResponse();
-            System.out.println("** View:[" + view.getCreator() + "|" + view.getViewNum() +
-                    "] (" + view.getSize() + ")" + view.getJchannelAddresses());
+            // System.out.println("** View:[" + view.getCreator() + "|" + view.getViewNum() +
+            //        "] (" + view.getSize() + ")" + view.getJchannelAddresses());
+            // changed
+            this.client.view.updateView(view);
+
+            // change:  call receiver of remote jchannel
+
         } else if (response.hasStateRep()){
             StateRep state = response.getStateRep();
             System.out.println(state.getSize() + " messages in the chat history.");
@@ -279,6 +283,7 @@ public class RemoteJChannelStub{
         stubLock.lock();
         try {
             client.isWork.set(true);
+            client.down.set(true);
         } finally {
             stubLock.unlock();
         }
@@ -353,16 +358,19 @@ public class RemoteJChannelStub{
         public void run() {
             while (true) {
                 // 4.1 start gRPC client and call connect() request.
+                // change: remove the argument isWork
                 StreamObserver requestSender = startGrpc(this.isWork);
-                connectCluster(requestSender);
+                // change
+                // connectCluster(requestSender);
                 // 4.2 getState() of JChannel
-                getState(requestSender);
+                // change
+                 // getState(requestSender);
                 // 4.3 check loop for connection problem and input content, and send request.
                 this.checkLoop(requestSender);
                 // 4.4 reconnect part.
                 boolean result = reconnect();
                 if (!result) {
-                    System.out.println("End.");
+                    System.out.println("End the control loop of stub.");
                     break;
                 }
             }
@@ -401,6 +409,8 @@ public class RemoteJChannelStub{
         }
 
     }
+
+
 
     public void startStub(){
         Control control = new Control(client.msgList, client.isWork);

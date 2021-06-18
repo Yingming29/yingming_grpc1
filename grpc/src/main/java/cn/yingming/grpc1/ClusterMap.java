@@ -16,7 +16,9 @@ public class ClusterMap implements Serializable {
     public int viewNum;
     public String creator;
     public ReentrantLock lock;
+    // the members list with join order.
     public ArrayList orderList;
+    // message history
     public LinkedList history;
     public ClusterMap(String creator){
         this.map = new ConcurrentHashMap<String, String>();
@@ -50,19 +52,15 @@ public class ClusterMap implements Serializable {
     }
     public String getCreator(){ return (String) this.orderList.get(0);}
     public ViewRep generateView(){
-        ViewRep rep = null;
+        ViewRep rep;
         this.lock.lock();
         try{
-            //List clientList = this.orderList;
-            /* List clientList = new ArrayList();
-            for (Object each:this.getMap().keySet()) {
-                clientList.add(this.getMap().get(each.toString()));
-            }*/
             rep = ViewRep.newBuilder()
                     .setCreator(getCreator())
                     .setViewNum(getViewNum())
                     .setSize(this.orderList.size())
-                    .setJchannelAddresses(this.orderList.toString())
+                    // changed.
+                    .addAllOneAddress(this.orderList)
                     .build();
             addViewNum();
         } finally {

@@ -1,35 +1,37 @@
 package cn.yingming.grpc1;
 
 import org.jgroups.*;
-import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.ProtocolStack;
+import org.jgroups.util.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 public class RemoteJChannel extends JChannel {
     public String address;
     public String uuid;
     public String name;
     public String cluster;
-    public ReentrantLock mainLock;
+    public String jchannel_address;
+
     public AtomicBoolean isWork;
     public ArrayList msgList;
-    public String jchannel_address;
+
     // change from JChannelClientStub to RemoteJChannelStub
     public RemoteJChannelStub clientStub;
     public AtomicBoolean down;
     public RemoteJChannelView view;
-    // whether stats?
-    public boolean stats;
+
     // whether receive message of itself
     public boolean discard_own_messages;
-    // record for stats
+    // whether stats?
+    public boolean stats;
+    // record for stats of remote jchannel
     public StatsRJ stats_obj;
 
     public RemoteJChannel(String name, String address) throws Exception {
@@ -38,29 +40,26 @@ public class RemoteJChannel extends JChannel {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.cluster = null;
-        this.mainLock = new ReentrantLock();
-        this.isWork = new AtomicBoolean(false);
         this.msgList = new ArrayList();
         // generated fake address.
         this.jchannel_address = "JChannel-" + this.name;
         this.clientStub = null;
-        this.down = new AtomicBoolean(true);
         this.view = new RemoteJChannelView();
-        this.stats = false;
+
+        // whether the grpc connection work
+        this.isWork = new AtomicBoolean(false);
+        // whether shutdown the RemoteJChannel
+        this.down = new AtomicBoolean(false);
+        // whether receive message of itself
         this.discard_own_messages = false;
+        // whether record the stats of the RemoteJChannel
+        this.stats = false;
+        // change: create class for stats obj record
         this.stats_obj = null;
     }
 
     @Override
     public Receiver getReceiver() {
-        /*
-        try {
-            throw new Exception("RemoteJChannel does not have Receiver. getReceiver() always returns null.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-         */
         throw new UnsupportedOperationException("RemoteJChannel does not have Receiver. " +
                 "getReceiver() does not return anything.");
     }
@@ -212,13 +211,6 @@ public class RemoteJChannel extends JChannel {
                 throw new IllegalStateException("name cannot be set if channel has name property. ");
             }
             this.name = name;
-            /*
-            if (this.local_addr != null) {
-
-                NameCache.add(this.local_addr, this.name);
-            }
-
-             */
         }
         return this;
     }
@@ -539,9 +531,202 @@ public class RemoteJChannel extends JChannel {
         return this;
     }
 
+    @Override
+    public JChannel getState(Address target, long timeout) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method." +
+                " Please use the getStateRJ(String target)");
+    }
+
+    @Override
+    public JChannel getState(Address target, long timeout, boolean useFlushIfPresent) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method." +
+                " Please use the getStateRJ(String target)");
+    }
+
+    // change the cmd ?
+    public JChannel getStateRJ(String target){
+        if (this.msgList == null){
+            throw new NullPointerException("The msgList is null.");
+        }
+        String cmd;
+        if (target == null || target.equals("")){
+            cmd = "getState() null";
+        } else{
+            cmd = "getState() " + target.trim();
+        }
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
+            System.out.println("Give a getStateRJ() to stub.");
+            this.msgList.add(cmd);
+        } finally {
+            lock.unlock();
+        }
+        return this;
+    }
+    @Override
+    public JChannel startFlush(boolean automatic_resume) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Flush protocol.");
+    }
+    @Override
+    public JChannel startFlush(List<Address> flushParticipants, boolean automatic_resume) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Flush protocol.");
+    }
+    @Override
+    public JChannel stopFlush() {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Flush protocol.");
+    }
+    @Override
+    public JChannel stopFlush(List<Address> flushParticipants) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Flush protocol.");
+    }
+    @Override
+    public Object down(Event evt) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Event object.");
+    }
+    @Override
+    public Object down(Message msg) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Event object.");
+    }
+    @Override
+    public Object up(Event evt) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Event object.");
+    }
+    @Override
+    public Object up(Message msg) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Event object.");
+    }
+    @Override
+    public JChannel up(MessageBatch batch) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method, it does not" +
+                "have Event object.");
+    }
+
+    @Override
+    public String toString(boolean details) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("JChannel address=").append(this.jchannel_address).append('\n').append("cluster_name=").append(this.cluster).append('\n').append("my_view=").append(this.view.toString()).append('\n').append("state=").append(this.getState()).append('\n');
+        if (details) {
+            sb.append("discard_own_messages=").append(this.discard_own_messages).append('\n');
+            sb.append("state_transfer_supported=").append("Not support").append('\n');
+            sb.append("props=").append("Not support").append('\n');
+            sb.append("grpc server address=").append(this.address).append('\n');
+            sb.append("available grpc server addresses=").append(this.clientStub.serverList.toString()).append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    @Override
+    protected boolean _preConnect(String cluster_name) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+
+    @Override
+    protected JChannel _connect(Event evt) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+
+    @Override
+    protected JChannel cleanup() {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+    @Override
+    protected JChannel getState(Address target, long timeout, Callable<Boolean> flushInvoker) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+    @Override
+    protected Object invokeCallback(int type, Object arg) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+
+    @Override
+    protected JChannel init() {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+
+    @Override
+    protected JChannel startStack(String cluster_name) throws Exception {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+
+    @Override
+    protected JChannel setAddress() {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+    @Override
+    protected Address generateAddress() {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
 
 
+    @Override
+    protected JChannel checkClosed() {
+        if (!this.down.get()) {
+            throw new IllegalStateException("channel is closed");
+        } else {
+            return this;
+        }
+    }
 
+    @Override
+    protected JChannel checkClosedOrNotConnected() {
+        if (!this.down.get()) {
+            throw new IllegalStateException("channel is closed");
+        } else {
+            return this;
+        }
+    }
+    @Override
+    protected JChannel _close(boolean disconnect) {
+        if (!this.down.get()) {
+            return this;
+        } else {
+            if (disconnect) {
+                this.disconnect();
+            }
+            return this;
+        }
+    }
+    @Override
+    protected JChannel stopStack(boolean stop, boolean destroy) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+    @Override
+    protected Address determineCoordinator() {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method. " +
+                "Please use determineCoordinatorRJ().");
+    }
+    protected String determineCoordinatorRJ() {
+        return this.view != null ? this.view.getCoordinator() : null;
+    }
+    @Override
+    protected JChannel notifyChannelConnected(JChannel c) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+    @Override
+    protected JChannel notifyChannelDisconnected(JChannel c) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+    @Override
+    protected JChannel notifyChannelClosed(JChannel c) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+    @Override
+    protected JChannel notifyListeners(Consumer<ChannelListener> func, String msg) {
+        throw new UnsupportedOperationException("RemoteJChannel does not support this method.");
+    }
+
+    public static enum State {
+    }
 
     public static void main(String[] args) throws Exception {
         RemoteJChannel rj = new RemoteJChannel("abc", "abc");

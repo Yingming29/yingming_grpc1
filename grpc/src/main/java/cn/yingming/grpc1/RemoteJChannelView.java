@@ -1,15 +1,17 @@
 package cn.yingming.grpc1;
 
-import java.util.ArrayList;
+import io.grpc.jchannelRpc.ViewRep;
+
+import java.util.LinkedList;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class RemoteJChannelView {
-
     String coordinator;
-    ArrayList members;
+    LinkedList members;
     int num;
     public RemoteJChannelView(){
         this.coordinator = null;
-        this.members = new ArrayList();
+        this.members = new LinkedList();
         this.num = 0;
     }
     public void setCoordinator(String coordinator){
@@ -19,12 +21,27 @@ public class RemoteJChannelView {
     public String getCoordinator(){
         return this.coordinator;
     }
-
-    public void setMembers(ArrayList newView){
-        this.members = newView;
+    // update the local view, members, num and coordinator
+    public void updateView(ViewRep view){
+        LinkedList l = new LinkedList();
+        l.addAll(view.getOneAddressList());
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try{
+            this.setMembers(l);
+            this.setCoordinator(view.getCreator());
+            this.setNum(view.getViewNum());
+            System.out.println("updateView() of RemoteJChannelView.");
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public ArrayList getMembers(){
+    public void setMembers(LinkedList new_members){
+        this.members = new_members;
+    }
+
+    public LinkedList getMembers(){
         return this.members;
     }
 
@@ -38,8 +55,11 @@ public class RemoteJChannelView {
 
     @Override
     public String toString(){
-        String str = "** View:[" + this.getCoordinator() + "|" + this.getNum() +
-                "] (" + this.getMembers().size() + ")" + this.getMembers().toString();
-        return str;
+        StringBuffer sb = new StringBuffer();
+        sb.append("Coordinator=").append(this.getCoordinator()).append('\n')
+                .append("Member size=").append(this.getMembers().size()).append('\n')
+                .append("View number=").append(this.getNum()).append('\n')
+                .append("Members=").append(this.getMembers().toString()).append('\n');
+        return sb.toString();
     }
 }

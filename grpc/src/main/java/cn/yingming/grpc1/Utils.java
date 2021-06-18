@@ -1,14 +1,10 @@
 package cn.yingming.grpc1;
 
-import io.grpc.jchannelRpc.ConnectReq;
-import io.grpc.jchannelRpc.DisconnectReq;
-import io.grpc.jchannelRpc.MessageReq;
-import io.grpc.jchannelRpc.Request;
-
 import java.io.*;
 
 public class Utils {
 
+    // serialize object for cluster information
     public static byte[] serializeClusterInf(Object obj){
         ObjectOutputStream objStream = null;
         ByteArrayOutputStream bytesStream = null;
@@ -32,7 +28,7 @@ public class Utils {
         }
         return null;
     }
-
+    // unserialize object for cluster information
     public static Object unserializeClusterInf(byte[] bytes){
         ByteArrayInputStream bytesStream = null;
         try{

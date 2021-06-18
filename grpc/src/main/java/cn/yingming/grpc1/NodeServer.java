@@ -98,9 +98,10 @@ public class NodeServer {
                         System.out.println(req.getConnectRequest().getJchannelAddress() + "(" +
                                 req.getConnectRequest().getSource() + ") joins the cluster, " +
                                 req.getConnectRequest().getCluster());
+                        forwardMsg(req);
                         // Store the responseObserver of the client.
                         join(req.getConnectRequest(), responseObserver);
-                        forwardMsg(req);
+
 
                     /*  Condition2
                         Receive the disconnect() request.
@@ -131,7 +132,7 @@ public class NodeServer {
                         onCompleted();
                     } else if (req.hasStateReq()){
                         StateReq stateReq = req.getStateReq();
-                        System.out.println("[gRPC] Receive the getState() request from a client.");
+                        System.out.println("[gRPC] Receive the getState() request for message history from a client.");
                         System.out.println(stateReq.getJchannelAddress() + "(" +
                                 stateReq.getSource() + ") calls getState() for cluster, " +
                                 stateReq.getCluster());
@@ -162,7 +163,7 @@ public class NodeServer {
                         System.out.println("[gRPC] " + msgReq.getJchannelAddress() + " sends message: " + msgReq.getContent()
                                 + " at " + msgReq.getTimestamp());
                         // Type1, broadcast
-                        if (msgReq.getDestination().equals(null)||msgReq.getDestination().equals("")){
+                        if (msgReq.getDestination() == null || msgReq.getDestination().equals("")){
                             System.out.println("[gRPC] Broadcast in the cluster " + msgReq.getCluster());
                             lock.lock();
                             try{
@@ -185,10 +186,11 @@ public class NodeServer {
                             lock.lock();
                             try{
 
-                                // send msg to its gRPC clients
-                                unicast(msgReq);
                                 // forward msg to other JChannels
                                 forwardMsg(req);
+                                // send msg to its gRPC clients
+                                unicast(msgReq);
+
                             }finally {
                                 lock.unlock();
                             }
