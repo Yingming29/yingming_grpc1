@@ -33,7 +33,7 @@ message ViewRep{
   string creator = 1;
   int32 viewNum = 2;
   int32 size = 3;
-  string jchannel_addresses = 4;
+  repeated string oneAddress = 4;
 }
 // update the available servers list
 message UpdateRep{
